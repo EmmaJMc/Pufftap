@@ -170,7 +170,9 @@ html, body {
 .cue-swipe-right { animation: slideRight 1.2s ease-in-out infinite; }
 .cue-swipe-left { animation: slideLeft 1.2s ease-in-out infinite; }
 .cue-swipe-up { animation: slideUp 1.2s ease-in-out infinite; }
+.cue-swipe-down { animation: slideDown 1.2s ease-in-out infinite; }
 .cue-pinch { animation: pinchCue 1.2s ease-in-out infinite; }
+.cue-spread { animation: spreadCue 1.2s ease-in-out infinite; }
 .cue-hold { animation: holdPulse 1.2s ease-in-out infinite; }
 .cue-double { animation: doubleFlash 0.8s ease-in-out infinite; }
 .cue-shake { animation: shakeCue 0.6s ease-in-out infinite; }
@@ -178,7 +180,9 @@ html, body {
 @keyframes slideRight { 0%,100%{transform:translateX(-6px);opacity:0.5} 50%{transform:translateX(8px);opacity:1} }
 @keyframes slideLeft { 0%,100%{transform:translateX(6px);opacity:0.5} 50%{transform:translateX(-8px);opacity:1} }
 @keyframes slideUp { 0%,100%{transform:translateY(6px);opacity:0.5} 50%{transform:translateY(-8px);opacity:1} }
+@keyframes slideDown { 0%,100%{transform:translateY(-6px);opacity:0.5} 50%{transform:translateY(8px);opacity:1} }
 @keyframes pinchCue { 0%,100%{transform:scaleX(1.2);opacity:0.5} 50%{transform:scaleX(0.7);opacity:1} }
+@keyframes spreadCue { 0%,100%{transform:scaleX(0.7);opacity:0.5} 50%{transform:scaleX(1.2);opacity:1} }
 @keyframes holdPulse { 0%,100%{transform:scale(0.8);opacity:0.4} 50%{transform:scale(1.2);opacity:1} }
 @keyframes doubleFlash { 0%,40%,100%{opacity:0.3} 10%,30%{opacity:1} }
 @keyframes shakeCue { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(-8deg)} 75%{transform:rotate(8deg)} }
@@ -963,7 +967,7 @@ window.addEventListener('online', syncQueue);
 const SESSION_MS = 90000;
 const PREVIEW_MS = 2000;
 const ARC_LENGTH = 691.15;
-const ALL_GESTURES = ['tap', 'double-tap', 'long-press', 'swipe-left', 'swipe-right', 'swipe-up', 'pinch', 'shake'];
+const ALL_GESTURES = ['tap', 'double-tap', 'long-press', 'swipe-left', 'swipe-right', 'swipe-up', 'swipe-down', 'pinch', 'spread', 'shake'];
 const TAP_ONLY_GESTURES = ['tap', 'double-tap', 'long-press'];
 
 function getGestureWindowMs() {
@@ -986,7 +990,9 @@ const gestureLabels = {
   'swipe-left': 'Swipe left ←',
   'swipe-right': 'Swipe right →',
   'swipe-up': 'Swipe up ↑',
+  'swipe-down': 'Swipe down ↓',
   'pinch': 'Squeeze →←',
+  'spread': 'Spread ←→',
   'circle': 'Circle ↻',
   'shake': 'Shake ≋'
 };
@@ -997,7 +1003,9 @@ const gestureAnim = {
   'swipe-left': 'cue-swipe-left',
   'swipe-right': 'cue-swipe-right',
   'swipe-up': 'cue-swipe-up',
+  'swipe-down': 'cue-swipe-down',
   'pinch': 'cue-pinch',
+  'spread': 'cue-spread',
   'shake': 'cue-shake'
 };
 
@@ -1371,6 +1379,7 @@ function detectSwipe(dx, dy) {
   const absX = Math.abs(dx), absY = Math.abs(dy);
   if (absX < 40 && absY < 40) return null;
   if (absX > absY) return dx > 0 ? 'swipe-right' : 'swipe-left';
+  if (dy > 40 && Math.abs(dx) < Math.abs(dy)) return 'swipe-down';
   if (dy < -40) return 'swipe-up';
   return null;
 }
@@ -1423,11 +1432,18 @@ function onTouchMove(e) {
 
   if (e.touches.length === 2 && gestureState.pinchStart) {
     const dist = touchDistance(e.touches[0], e.touches[1]);
-    if (gestureState.pinchStart - dist > 30 && !gestureState.pinchDetected) {
-      gestureState.pinchDetected = true;
-      emitGesture('pinch');
-      gestureState.active = false;
-      clearLongPress();
+    if (!gestureState.pinchDetected) {
+      if (gestureState.pinchStart - dist > 30) {
+        gestureState.pinchDetected = true;
+        emitGesture('pinch');
+        gestureState.active = false;
+        clearLongPress();
+      } else if (dist - gestureState.pinchStart > 30) {
+        gestureState.pinchDetected = true;
+        emitGesture('spread');
+        gestureState.active = false;
+        clearLongPress();
+      }
     }
     return;
   }
@@ -1452,6 +1468,8 @@ function onTouchEnd(e) {
     const pinchEnd = Math.hypot(dx, dy);
     if (gestureState.pinchStart - pinchEnd > 30) {
       emitGesture('pinch');
+    } else if (pinchEnd - gestureState.pinchStart > 30) {
+      emitGesture('spread');
     }
     gestureState.pinchStart = null;
     gestureState.active = false;
