@@ -150,8 +150,59 @@ html, body {
 .savings-hero-amount span { color: var(--btn); }
 .savings-hero-sub { font-size: 0.8rem; color: var(--type-dim); margin-top: 0.3rem; }
 
-.tap-section { display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem; }
-.tap-motivator { font-size: 0.82rem; color: var(--type-dim); margin-bottom: 1rem; font-style: italic; text-align: center; font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; }
+.tap-section { display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem; position: relative; }
+.tap-motivator { font-size: 1.1rem; color: var(--type-dim); margin-bottom: 0.75rem; font-style: italic; text-align: center; font-family: 'Cormorant Garamond', serif; }
+
+.gesture-instruction {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 1.8rem;
+  color: #FFE6A7;
+  text-align: center;
+  min-height: 2.6rem;
+  margin-bottom: 0.75rem;
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  transition: opacity 0.6s ease;
+}
+.gesture-instruction.fading { opacity: 0.25; }
+.gesture-cue { display: inline-flex; align-items: center; min-width: 2rem; }
+
+.cue-swipe-right { animation: slideRight 1.2s ease-in-out infinite; }
+.cue-swipe-left { animation: slideLeft 1.2s ease-in-out infinite; }
+.cue-swipe-up { animation: slideUp 1.2s ease-in-out infinite; }
+.cue-pinch { animation: pinchCue 1.2s ease-in-out infinite; }
+.cue-hold { animation: holdPulse 1.2s ease-in-out infinite; }
+.cue-double { animation: doubleFlash 0.8s ease-in-out infinite; }
+.cue-shake { animation: shakeCue 0.6s ease-in-out infinite; }
+
+@keyframes slideRight { 0%,100%{transform:translateX(-6px);opacity:0.5} 50%{transform:translateX(8px);opacity:1} }
+@keyframes slideLeft { 0%,100%{transform:translateX(6px);opacity:0.5} 50%{transform:translateX(-8px);opacity:1} }
+@keyframes slideUp { 0%,100%{transform:translateY(6px);opacity:0.5} 50%{transform:translateY(-8px);opacity:1} }
+@keyframes pinchCue { 0%,100%{transform:scaleX(1.2);opacity:0.5} 50%{transform:scaleX(0.7);opacity:1} }
+@keyframes holdPulse { 0%,100%{transform:scale(0.8);opacity:0.4} 50%{transform:scale(1.2);opacity:1} }
+@keyframes doubleFlash { 0%,40%,100%{opacity:0.3} 10%,30%{opacity:1} }
+@keyframes shakeCue { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(-8deg)} 75%{transform:rotate(8deg)} }
+@keyframes breathScale { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
+@keyframes breathOpacity { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+.wave-wrap {
+  position: relative;
+  width: 240px; height: 240px;
+  display: flex; align-items: center; justify-content: center;
+}
+.breath-arc {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  animation: breathOpacity 4s ease-in-out infinite;
+}
+.breath-arc circle {
+  fill: none;
+  stroke: #CEAD6E;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.15s linear;
+}
 
 .big-tap-btn {
   width: 200px; height: 200px;
@@ -162,21 +213,48 @@ html, body {
   display: flex; flex-direction: column; justify-content: center; align-items: center;
   cursor: pointer; user-select: none;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 0.1s, box-shadow 0.1s;
-  position: relative;
+  touch-action: none;
+  position: relative; z-index: 1;
 }
-.big-tap-btn:active { transform: scale(0.92); }
-.big-tap-btn.pressed { transform: scale(0.92); }
-.big-tap-btn.complete { transform: scale(1.07); box-shadow: 0 0 0 3px rgba(206,173,110,0.5), 0 28px 64px rgba(0,0,0,0.5); }
+.big-tap-btn.breathing { animation: breathScale 4s ease-in-out infinite; }
+.big-tap-btn.complete { box-shadow: 0 0 0 3px rgba(206,173,110,0.5), 0 28px 64px rgba(0,0,0,0.5); }
 .btn-countdown { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; color: #FFE6A7; line-height: 1; margin-bottom: 0.15rem; }
 .btn-emoji { font-size: 3.8rem; line-height: 1; margin-bottom: 0.3rem; transition: transform 0.15s; filter: drop-shadow(0 2px 6px rgba(46,26,14,0.6)); }
 .btn-label { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--type); font-weight: 500; }
 .btn-avoided { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 600; color: var(--amber); margin-top: 0.1rem; min-height: 2rem; }
 
-.ripple { position: absolute; inset: -24px; border-radius: 50%; border: 2px solid rgba(206,173,110,0.35); opacity: 0; pointer-events: none; }
-.ripple.go { animation: ripp 0.7s ease-out forwards; }
-.ripple.go2 { animation: ripp 0.7s ease-out 0.15s forwards; }
-@keyframes ripp { 0%{transform:scale(0.65);opacity:0.8} 100%{transform:scale(1.6);opacity:0} }
+.session-exit-btn {
+  position: absolute; top: 0; right: calc(50% - 130px);
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,230,167,0.25);
+  background: rgba(46,26,14,0.6);
+  color: var(--type-dim);
+  font-size: 1.1rem; line-height: 1;
+  cursor: pointer; display: none;
+  align-items: center; justify-content: center;
+}
+.session-exit-btn.visible { display: flex; }
+
+#abandonOverlay {
+  position: fixed; inset: 0; z-index: 190;
+  background: rgba(46,26,14,0.92);
+  display: none; flex-direction: column;
+  justify-content: center; align-items: center;
+  text-align: center; padding: 2rem;
+}
+#abandonOverlay.show { display: flex; }
+.abandon-title { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; color: var(--type); margin-bottom: 1.5rem; }
+.abandon-actions { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; max-width: 280px; }
+.abandon-btn {
+  background: transparent; color: var(--type);
+  border: 1.5px solid var(--type); padding: 0.9rem 1.5rem;
+  border-radius: 100px; font-family: 'DM Sans', sans-serif;
+  font-size: 1rem; cursor: pointer; transition: all 0.2s;
+}
+.abandon-btn:hover { background: var(--type); color: var(--bg-deep); }
+.abandon-btn.secondary { border-color: rgba(255,230,167,0.3); color: var(--type-dim); }
+.abandon-btn.secondary:hover { background: rgba(255,230,167,0.1); color: var(--type); }
 
 .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 1.25rem; }
 .stat-card { background: var(--bg-mid); border: 1px solid rgba(255,230,167,0.08); border-radius: 16px; padding: 1rem; }
@@ -381,13 +459,21 @@ html, body {
 
       <div class="tap-section">
         <div class="tap-motivator" id="tapMotivator">Every tap is a win.</div>
-        <div class="big-tap-btn" id="bigTapBtn" onclick="handleAppTap()">
-          <div class="ripple" id="ar1"></div>
-          <div class="ripple" id="ar2"></div>
-          <div class="btn-countdown" id="btnCountdown">3</div>
-          <div class="btn-emoji" id="btnEmoji">✊</div>
-          <div class="btn-label" id="btnLabel">Tap instead of puffing</div>
-          <div class="btn-avoided" id="btnAvoided">0 puffs avoided</div>
+        <div class="gesture-instruction" id="gestureInstruction">
+          <span id="gestureText">Swipe right</span>
+          <span class="gesture-cue cue-swipe-right" id="gestureCue">→</span>
+        </div>
+        <button class="session-exit-btn" id="sessionExitBtn" type="button" aria-label="Exit session">×</button>
+        <div class="wave-wrap">
+          <svg class="breath-arc" id="breathArc" viewBox="0 0 240 240" aria-hidden="true">
+            <circle id="arcCircle" cx="120" cy="120" r="110" stroke-dasharray="691.15" stroke-dashoffset="691.15" transform="rotate(-90 120 120)"/>
+          </svg>
+          <div class="big-tap-btn" id="bigTapBtn">
+            <div class="btn-countdown" id="btnCountdown">4</div>
+            <div class="btn-emoji" id="btnEmoji">✊</div>
+            <div class="btn-label" id="btnLabel">Ride the craving wave</div>
+            <div class="btn-avoided" id="btnAvoided">0 puffs avoided</div>
+          </div>
         </div>
       </div>
 
@@ -500,6 +586,15 @@ html, body {
   </div>
 </div>
 
+<!-- ABANDON OVERLAY -->
+<div id="abandonOverlay">
+  <div class="abandon-title" id="abandonTitle">You made it 0 seconds</div>
+  <div class="abandon-actions">
+    <button class="abandon-btn" type="button" onclick="resumeWaveSession()">Tap back in</button>
+    <button class="abandon-btn secondary" type="button" onclick="endWaveSession()">I'm done</button>
+  </div>
+</div>
+
 <!-- CELEBRATION OVERLAY -->
 <div id="celebOverlay">
   <div class="celeb-emoji" id="celebEmoji">🎉</div>
@@ -527,7 +622,6 @@ const poisonCfg = {
   both: { taps: 3, unit: 'hit', units: 'hits', deviceLabel: 'device/pack', costLabel: 'Avg cost per item', puffsLabel: 'Uses per item', perWeekLabel: 'Items per week', emojis: ['✊','☝️','✌️','🤘'], ob2q: 'Average cost per vape or pack?', ob3qHtml: 'Uses per<br><em>item?</em>', ob3sub: 'Average across what you use. A rough number is fine.', ob3placeholder: 'e.g. 400', ob4qHtml: 'How many devices or packs per<br><em>week?</em>', ob4sub: 'Be honest. This is just for your savings estimate.', ob4placeholder: 'e.g. 3' }
 };
 
-let tapStep = 0, resetTimer = null;
 const milestones = [
   { val: 5, emoji: '🌱', label: '$5 saved' },
   { val: 10, emoji: '🎯', label: '$10 saved' },
@@ -624,7 +718,8 @@ function initApp() {
   document.getElementById('btnLabel').textContent = 'Tap instead of puffing';
   document.getElementById('btnAvoided').textContent = '0 ' + cfg.units + ' avoided';
 
-  resetTapSequence();
+  initWaveEngine();
+  saveStateToStorage();
 
   // Settings panel
   document.getElementById('setName').value = state.name;
@@ -644,14 +739,6 @@ function initApp() {
 
   // Start live savings ticker
   startSavingsTicker();
-}
-
-function resetTapSequence() {
-  const cfg = poisonCfg[state.poison];
-  tapStep = 0;
-  document.getElementById('btnCountdown').textContent = cfg.taps;
-  document.getElementById('btnEmoji').textContent = cfg.emojis[0];
-  document.getElementById('bigTapBtn').classList.remove('complete');
 }
 
 function buildGraph() {
@@ -702,61 +789,579 @@ function startSavingsTicker() {
   }, 500);
 }
 
-// ── TAP MECHANIC ──
-function handleAppTap() {
-  clearTimeout(resetTimer);
-  const cfg = poisonCfg[state.poison];
-  const btn = document.getElementById('bigTapBtn');
-  const emoji = document.getElementById('btnEmoji');
-  const countdown = document.getElementById('btnCountdown');
+// ── OFFLINE STORAGE & SYNC QUEUE ──
+const STATE_KEY = 'pufftap_state';
+const SYNC_QUEUE_KEY = 'pufftap_sync_queue';
+const MICRO_ROUTINES_KEY = 'pufftap_micro_routines';
 
-  tapStep++;
+function saveStateToStorage() {
+  try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch (e) {}
+}
 
-  btn.classList.add('pressed');
-  setTimeout(() => btn.classList.remove('pressed'), 120);
-
-  emoji.style.transform = 'scale(1.3)';
-  setTimeout(() => emoji.style.transform = 'scale(1)', 180);
-  emoji.textContent = cfg.emojis[tapStep];
-
-  const remaining = cfg.taps - tapStep;
-  countdown.textContent = remaining;
-
-  if (tapStep === cfg.taps) {
-    state.totalPuffsAvoided++;
-    state.todayPuffs++;
-    state.sessions++;
-    const todayIdx = (new Date().getDay() + 6) % 7;
-    state.weekData[todayIdx]++;
-
-    btn.classList.add('complete');
-    const r1 = document.getElementById('ar1'), r2 = document.getElementById('ar2');
-    r1.classList.remove('go'); r2.classList.remove('go2');
-    void r1.offsetWidth;
-    r1.classList.add('go'); r2.classList.add('go2');
-
-    countdown.textContent = '✓';
-
-    const cfg2 = poisonCfg[state.poison];
-    const avoided = document.getElementById('btnAvoided');
-    avoided.textContent = state.totalPuffsAvoided + ' ' + cfg2.units + ' avoided';
-    avoided.style.transform = 'scale(1.2)';
-    setTimeout(() => avoided.style.transform = 'scale(1)', 220);
-
+function loadStateFromStorage() {
+  try {
+    const saved = localStorage.getItem(STATE_KEY);
+    if (!saved) return;
+    const parsed = JSON.parse(saved);
+    Object.assign(state, parsed);
+    const cfg = poisonCfg[state.poison];
+    document.getElementById('btnAvoided').textContent = state.totalPuffsAvoided + ' ' + cfg.units + ' avoided';
     document.getElementById('statToday').textContent = state.todayPuffs;
-    document.getElementById('statTodayUnit').textContent = cfg2.units + ' avoided';
     document.getElementById('statStreak').textContent = state.streak;
     document.getElementById('progStreak').textContent = state.streak;
     document.getElementById('progSessions').textContent = state.sessions;
     buildGraph();
+    buildMilestones();
+  } catch (e) {}
+}
 
-    const motivators = ['Every tap is a win.', 'The urge will pass. It always does.', 'Your future self is watching.', 'One tap at a time.', 'You chose this. Keep going.', 'The ritual is the reward now.', 'That one did not count. This one does.', 'Streak intact. Keep it that way.'];
-    document.getElementById('tapMotivator').textContent = motivators[Math.floor(Math.random() * motivators.length)];
+function queueDataUpdate(payload) {
+  try {
+    const queue = JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]');
+    queue.push({ ...payload, ts: Date.now() });
+    localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
+  } catch (e) {}
+}
 
-    setTimeout(() => resetTapSequence(), 1500);
-  } else {
-    resetTimer = setTimeout(() => resetTapSequence(), 4000);
+function syncQueue() {
+  try {
+    saveStateToStorage();
+    localStorage.removeItem(SYNC_QUEUE_KEY);
+  } catch (e) {}
+}
+
+window.addEventListener('online', syncQueue);
+
+// ── WAVE SESSION ENGINE ──
+const SESSION_MS = 90000;
+const GESTURE_SLOT_MS = 4000;
+const PREVIEW_MS = 2000;
+const WINDOW_MS = 2000;
+const ARC_LENGTH = 691.15;
+const GESTURE_TYPES = ['tap', 'double-tap', 'long-press', 'swipe-left', 'swipe-right', 'swipe-up', 'pinch', 'shake'];
+
+const GESTURE_UI = {
+  'tap': { text: 'Tap', cue: '●', anim: '' },
+  'double-tap': { text: 'Double tap', cue: '✦', anim: 'cue-double' },
+  'long-press': { text: 'Hold', cue: '...', anim: 'cue-hold' },
+  'swipe-left': { text: 'Swipe left', cue: '←', anim: 'cue-swipe-left' },
+  'swipe-right': { text: 'Swipe right', cue: '→', anim: 'cue-swipe-right' },
+  'swipe-up': { text: 'Swipe up', cue: '↑', anim: 'cue-swipe-up' },
+  'pinch': { text: 'Pinch', cue: '←→', anim: 'cue-pinch' },
+  'shake': { text: 'Shake', cue: '⇔', anim: 'cue-shake' }
+};
+
+let wave = {
+  status: 'idle',
+  sequence: [],
+  gestureIndex: 0,
+  phase: 'preview',
+  sessionStart: 0,
+  elapsed: 0,
+  pausedElapsed: 0,
+  emojiIndex: 0,
+  loopRemaining: 0,
+  timers: [],
+  rafId: null,
+  gesturePhaseStart: 0,
+  shakeHandler: null
+};
+
+let lastMicroRoutines = [];
+
+function vibrate(pattern) {
+  try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
+}
+
+function getEmojiCfg() {
+  return poisonCfg[state.poison].emojis;
+}
+
+function loadMicroRoutines() {
+  try {
+    lastMicroRoutines = JSON.parse(localStorage.getItem(MICRO_ROUTINES_KEY) || '[]');
+  } catch (e) { lastMicroRoutines = []; }
+}
+
+function saveMicroRoutines() {
+  try { localStorage.setItem(MICRO_ROUTINES_KEY, JSON.stringify(lastMicroRoutines)); } catch (e) {}
+}
+
+function randomGesture() {
+  return GESTURE_TYPES[Math.floor(Math.random() * GESTURE_TYPES.length)];
+}
+
+function generateMicroRoutine() {
+  if (lastMicroRoutines.length > 0 && Math.random() < 0.35) {
+    return lastMicroRoutines[Math.floor(Math.random() * lastMicroRoutines.length)].slice();
   }
+  const routine = [randomGesture(), randomGesture(), randomGesture()];
+  lastMicroRoutines.push(routine);
+  if (lastMicroRoutines.length > 3) lastMicroRoutines.shift();
+  saveMicroRoutines();
+  return routine;
+}
+
+function generateSequence() {
+  const count = Math.floor(SESSION_MS / GESTURE_SLOT_MS);
+  const sequence = [];
+  let i = 0;
+  while (i < count) {
+    if (Math.random() < 1 / 6 && i <= count - 3) {
+      sequence.push(...generateMicroRoutine());
+      i += 3;
+    } else {
+      sequence.push(randomGesture());
+      i++;
+    }
+  }
+  return sequence.slice(0, count);
+}
+
+function clearWaveTimers() {
+  wave.timers.forEach(clearTimeout);
+  wave.timers = [];
+  if (wave.rafId) { cancelAnimationFrame(wave.rafId); wave.rafId = null; }
+}
+
+function setIdleInstruction() {
+  const el = document.getElementById('gestureInstruction');
+  document.getElementById('gestureText').textContent = 'Swipe right';
+  const cue = document.getElementById('gestureCue');
+  cue.textContent = '→';
+  cue.className = 'gesture-cue cue-swipe-right';
+  el.classList.remove('fading');
+}
+
+function showGestureInstruction(type) {
+  const ui = GESTURE_UI[type];
+  const el = document.getElementById('gestureInstruction');
+  document.getElementById('gestureText').textContent = ui.text;
+  const cue = document.getElementById('gestureCue');
+  cue.textContent = ui.cue;
+  cue.className = 'gesture-cue' + (ui.anim ? ' ' + ui.anim : '');
+  el.classList.remove('fading');
+}
+
+function fadeInstruction() {
+  document.getElementById('gestureInstruction').classList.add('fading');
+}
+
+function updateArcProgress() {
+  const progress = Math.min(wave.elapsed / SESSION_MS, 1);
+  document.getElementById('arcCircle').style.strokeDashoffset = ARC_LENGTH * (1 - progress);
+}
+
+function resetArc() {
+  document.getElementById('arcCircle').style.strokeDashoffset = ARC_LENGTH;
+}
+
+function updateLoopCountdown() {
+  document.getElementById('btnCountdown').textContent = wave.loopRemaining;
+}
+
+function resetWaveIdle() {
+  clearWaveTimers();
+  stopShakeListener();
+  wave.status = 'idle';
+  wave.sequence = [];
+  wave.gestureIndex = 0;
+  wave.phase = 'preview';
+  wave.elapsed = 0;
+  wave.pausedElapsed = 0;
+  wave.emojiIndex = 0;
+  const emojis = getEmojiCfg();
+  wave.loopRemaining = emojis.length;
+  document.getElementById('bigTapBtn').classList.remove('breathing', 'complete');
+  document.getElementById('sessionExitBtn').classList.remove('visible');
+  document.getElementById('btnEmoji').textContent = '✊';
+  document.getElementById('btnLabel').textContent = 'Ride the craving wave';
+  updateLoopCountdown();
+  resetArc();
+  setIdleInstruction();
+}
+
+function advanceEmoji() {
+  const emojis = getEmojiCfg();
+  wave.emojiIndex = (wave.emojiIndex + 1) % emojis.length;
+  document.getElementById('btnEmoji').textContent = emojis[wave.emojiIndex];
+  wave.loopRemaining--;
+  if (wave.loopRemaining <= 0) {
+    wave.loopRemaining = emojis.length;
+  }
+  updateLoopCountdown();
+  const emoji = document.getElementById('btnEmoji');
+  emoji.style.transform = 'scale(1.2)';
+  setTimeout(() => { emoji.style.transform = 'scale(1)'; }, 180);
+}
+
+function tickWave() {
+  if (wave.status !== 'active') return;
+  const now = performance.now();
+  wave.elapsed = now - wave.sessionStart;
+  updateArcProgress();
+  if (wave.elapsed >= SESSION_MS) {
+    completeWaveSession();
+    return;
+  }
+  wave.rafId = requestAnimationFrame(tickWave);
+}
+
+function scheduleGestureCycle() {
+  if (wave.status !== 'active') return;
+  wave.phase = 'preview';
+  wave.gesturePhaseStart = performance.now();
+  const expected = wave.sequence[wave.gestureIndex];
+  if (expected) showGestureInstruction(expected);
+
+  const previewTimer = setTimeout(() => {
+    if (wave.status !== 'active') return;
+    wave.phase = 'window';
+  }, PREVIEW_MS);
+  wave.timers.push(previewTimer);
+
+  const slotTimer = setTimeout(() => {
+    if (wave.status !== 'active') return;
+    fadeInstruction();
+    wave.gestureIndex++;
+    if (wave.gestureIndex < wave.sequence.length && wave.elapsed < SESSION_MS) {
+      const nextTimer = setTimeout(scheduleGestureCycle, 0);
+      wave.timers.push(nextTimer);
+    }
+  }, GESTURE_SLOT_MS);
+  wave.timers.push(slotTimer);
+}
+
+function onGestureMatched(gesture) {
+  if (wave.status === 'idle' && gesture === 'swipe-right') {
+    startWaveSession();
+    return;
+  }
+  if (wave.status !== 'active' || wave.phase !== 'window') return;
+  const expected = wave.sequence[wave.gestureIndex];
+  if (gesture !== expected) return;
+
+  vibrate(40);
+  advanceEmoji();
+  clearWaveTimers();
+  wave.gestureIndex++;
+  if (wave.elapsed < SESSION_MS) {
+    const t = setTimeout(scheduleGestureCycle, 0);
+    wave.timers.push(t);
+  }
+}
+
+function startWaveSession() {
+  loadMicroRoutines();
+  wave.status = 'active';
+  wave.sequence = generateSequence();
+  wave.gestureIndex = 0;
+  wave.sessionStart = performance.now();
+  wave.elapsed = 0;
+  wave.emojiIndex = 0;
+  wave.loopRemaining = getEmojiCfg().length;
+  updateLoopCountdown();
+  document.getElementById('bigTapBtn').classList.add('breathing');
+  document.getElementById('sessionExitBtn').classList.add('visible');
+  document.getElementById('btnLabel').textContent = 'Stay with the wave';
+  document.getElementById('btnEmoji').textContent = getEmojiCfg()[0];
+  resetArc();
+  startShakeListener();
+  history.pushState({ wave: true }, '');
+  scheduleGestureCycle();
+  wave.rafId = requestAnimationFrame(tickWave);
+}
+
+function completeWaveSession() {
+  clearWaveTimers();
+  stopShakeListener();
+  wave.status = 'complete';
+  document.getElementById('arcCircle').style.strokeDashoffset = '0';
+  document.getElementById('bigTapBtn').classList.add('complete');
+  document.getElementById('btnEmoji').textContent = '🤘';
+  document.getElementById('sessionExitBtn').classList.remove('visible');
+  vibrate([60, 40, 60, 40, 100]);
+
+  state.totalPuffsAvoided++;
+  state.todayPuffs++;
+  state.sessions++;
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  state.weekData[todayIdx]++;
+
+  const cfg = poisonCfg[state.poison];
+  document.getElementById('btnAvoided').textContent = state.totalPuffsAvoided + ' ' + cfg.units + ' avoided';
+  document.getElementById('statToday').textContent = state.todayPuffs;
+  document.getElementById('statTodayUnit').textContent = cfg.units + ' avoided';
+  document.getElementById('statStreak').textContent = state.streak;
+  document.getElementById('progStreak').textContent = state.streak;
+  document.getElementById('progSessions').textContent = state.sessions;
+  buildGraph();
+
+  queueDataUpdate({ type: 'session_complete', sessions: 1, puffs: 1 });
+  saveStateToStorage();
+  if (navigator.onLine) syncQueue();
+
+  document.getElementById('celebEmoji').textContent = '🤘';
+  document.getElementById('celebTitle').textContent = 'You rode the wave';
+  document.getElementById('celebSub').textContent = '90 seconds. One craving down.';
+  document.getElementById('celebOverlay').classList.add('show');
+
+  setTimeout(() => resetWaveIdle(), 3000);
+}
+
+function abandonWaveSession() {
+  if (wave.status !== 'active') return;
+  clearWaveTimers();
+  stopShakeListener();
+  wave.status = 'abandoned';
+  wave.pausedElapsed = wave.elapsed;
+  vibrate(20);
+  const seconds = Math.floor(wave.pausedElapsed / 1000);
+  document.getElementById('abandonTitle').textContent = 'You made it ' + seconds + ' seconds';
+  document.getElementById('abandonOverlay').classList.add('show');
+}
+
+function resumeWaveSession() {
+  document.getElementById('abandonOverlay').classList.remove('show');
+  wave.status = 'active';
+  wave.sessionStart = performance.now() - wave.pausedElapsed;
+  startShakeListener();
+  scheduleGestureCycle();
+  wave.rafId = requestAnimationFrame(tickWave);
+}
+
+function endWaveSession() {
+  document.getElementById('abandonOverlay').classList.remove('show');
+  resetWaveIdle();
+}
+
+// ── GESTURE DETECTION ──
+const gestureState = {
+  startX: 0, startY: 0, startTime: 0,
+  lastTapTime: 0, moved: false,
+  longPressTimer: null, pinchStartDist: 0,
+  pinchDetected: false, active: false
+};
+
+function touchDistance(t1, t2) {
+  const dx = t1.clientX - t2.clientX;
+  const dy = t1.clientY - t2.clientY;
+  return Math.hypot(dx, dy);
+}
+
+function detectSwipe(dx, dy) {
+  const absX = Math.abs(dx), absY = Math.abs(dy);
+  if (absX < 40 && absY < 40) return null;
+  if (absX > absY) return dx > 0 ? 'swipe-right' : 'swipe-left';
+  if (dy < -40) return 'swipe-up';
+  return null;
+}
+
+function emitGesture(type) {
+  onGestureMatched(type);
+}
+
+function clearLongPress() {
+  if (gestureState.longPressTimer) {
+    clearTimeout(gestureState.longPressTimer);
+    gestureState.longPressTimer = null;
+  }
+}
+
+function onTouchStart(e) {
+  const btn = document.getElementById('bigTapBtn');
+  if (!btn.contains(e.target) && e.target !== btn) return;
+
+  if (e.touches.length === 2) {
+    gestureState.pinchStartDist = touchDistance(e.touches[0], e.touches[1]);
+    gestureState.pinchDetected = false;
+    gestureState.active = true;
+    clearLongPress();
+    return;
+  }
+
+  if (e.touches.length !== 1) return;
+  const t = e.touches[0];
+  gestureState.startX = t.clientX;
+  gestureState.startY = t.clientY;
+  gestureState.startTime = Date.now();
+  gestureState.moved = false;
+  gestureState.active = true;
+  gestureState.pinchDetected = false;
+
+  clearLongPress();
+  gestureState.longPressTimer = setTimeout(() => {
+    if (gestureState.active && !gestureState.moved) {
+      emitGesture('long-press');
+      gestureState.active = false;
+    }
+  }, 1000);
+}
+
+function onTouchMove(e) {
+  if (!gestureState.active) return;
+
+  if (e.touches.length === 2 && gestureState.pinchStartDist > 0) {
+    const dist = touchDistance(e.touches[0], e.touches[1]);
+    if (gestureState.pinchStartDist - dist > 30 && !gestureState.pinchDetected) {
+      gestureState.pinchDetected = true;
+      emitGesture('pinch');
+      gestureState.active = false;
+      clearLongPress();
+    }
+    return;
+  }
+
+  if (e.touches.length !== 1) return;
+  const t = e.touches[0];
+  const dx = t.clientX - gestureState.startX;
+  const dy = t.clientY - gestureState.startY;
+  if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+    gestureState.moved = true;
+    clearLongPress();
+  }
+}
+
+function onTouchEnd(e) {
+  if (!gestureState.active) return;
+  clearLongPress();
+
+  if (gestureState.pinchDetected) {
+    gestureState.active = false;
+    return;
+  }
+
+  const t = e.changedTouches[0];
+  const dx = t.clientX - gestureState.startX;
+  const dy = t.clientY - gestureState.startY;
+  const elapsed = Date.now() - gestureState.startTime;
+
+  const swipe = detectSwipe(dx, dy);
+  if (swipe) {
+    emitGesture(swipe);
+    gestureState.active = false;
+    return;
+  }
+
+  if (!gestureState.moved && elapsed < 500) {
+    const now = Date.now();
+    if (now - gestureState.lastTapTime < 300) {
+      emitGesture('double-tap');
+      gestureState.lastTapTime = 0;
+    } else {
+      gestureState.lastTapTime = now;
+      setTimeout(() => {
+        if (gestureState.lastTapTime === now) {
+          emitGesture('tap');
+        }
+      }, 300);
+    }
+  }
+
+  gestureState.active = false;
+}
+
+function onMouseDown(e) {
+  gestureState.startX = e.clientX;
+  gestureState.startY = e.clientY;
+  gestureState.startTime = Date.now();
+  gestureState.moved = false;
+  gestureState.active = true;
+  clearLongPress();
+  gestureState.longPressTimer = setTimeout(() => {
+    if (gestureState.active && !gestureState.moved) {
+      emitGesture('long-press');
+      gestureState.active = false;
+    }
+  }, 1000);
+}
+
+function onMouseMove(e) {
+  if (!gestureState.active) return;
+  const dx = e.clientX - gestureState.startX;
+  const dy = e.clientY - gestureState.startY;
+  if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+    gestureState.moved = true;
+    clearLongPress();
+  }
+}
+
+function onMouseUp(e) {
+  if (!gestureState.active) return;
+  clearLongPress();
+  const dx = e.clientX - gestureState.startX;
+  const dy = e.clientY - gestureState.startY;
+  const elapsed = Date.now() - gestureState.startTime;
+  const swipe = detectSwipe(dx, dy);
+  if (swipe) { emitGesture(swipe); gestureState.active = false; return; }
+  if (!gestureState.moved && elapsed < 500) {
+    const now = Date.now();
+    if (now - gestureState.lastTapTime < 300) {
+      emitGesture('double-tap');
+      gestureState.lastTapTime = 0;
+    } else {
+      gestureState.lastTapTime = now;
+      setTimeout(() => {
+        if (gestureState.lastTapTime === now) emitGesture('tap');
+      }, 300);
+    }
+  }
+  gestureState.active = false;
+}
+
+let lastAccel = { x: 0, y: 0, z: 0 };
+
+function startShakeListener() {
+  if (wave.shakeHandler) return;
+  if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+    DeviceMotionEvent.requestPermission().then((r) => {
+      if (r === 'granted') attachShake();
+    }).catch(() => {});
+  } else {
+    attachShake();
+  }
+}
+
+function attachShake() {
+  wave.shakeHandler = (e) => {
+    if (wave.status !== 'active' || wave.phase !== 'window') return;
+    const a = e.accelerationIncludingGravity;
+    if (!a) return;
+    const dx = Math.abs(a.x - lastAccel.x);
+    const dy = Math.abs(a.y - lastAccel.y);
+    const dz = Math.abs(a.z - lastAccel.z);
+    const total = dx + dy + dz;
+    lastAccel = { x: a.x, y: a.y, z: a.z };
+    if (total > 25) emitGesture('shake');
+  };
+  window.addEventListener('devicemotion', wave.shakeHandler);
+}
+
+function stopShakeListener() {
+  if (wave.shakeHandler) {
+    window.removeEventListener('devicemotion', wave.shakeHandler);
+    wave.shakeHandler = null;
+  }
+}
+
+let waveEngineInitialized = false;
+
+function initWaveEngine() {
+  loadMicroRoutines();
+  resetWaveIdle();
+  if (waveEngineInitialized) return;
+  waveEngineInitialized = true;
+  const btn = document.getElementById('bigTapBtn');
+  btn.addEventListener('touchstart', onTouchStart, { passive: true });
+  btn.addEventListener('touchmove', onTouchMove, { passive: true });
+  btn.addEventListener('touchend', onTouchEnd);
+  btn.addEventListener('mousedown', onMouseDown);
+  window.addEventListener('mousemove', onMouseMove);
+  window.addEventListener('mouseup', onMouseUp);
+  document.getElementById('sessionExitBtn').addEventListener('click', abandonWaveSession);
+  window.addEventListener('popstate', () => {
+    if (wave.status === 'active') abandonWaveSession();
+  });
 }
 
 // ── MILESTONES ──
@@ -778,6 +1383,7 @@ function showCelebration(m) {
 
 function closeOverlay() {
   document.getElementById('celebOverlay').classList.remove('show');
+  if (wave.status === 'complete') resetWaveIdle();
 }
 
 // ── TABS ──
@@ -799,6 +1405,7 @@ function saveSettings() {
   const costPerPuff = state.costPerDevice / state.puffsPerDevice;
   const puffsPerWeek = state.puffsPerDevice * state.devicesPerWeek;
   document.getElementById('savingsRate').textContent = 'Up to $' + (costPerPuff * puffsPerWeek).toFixed(2) + ' saved this week if you tap every craving';
+  saveStateToStorage();
   alert('Saved!');
 }
 
@@ -818,9 +1425,48 @@ function resetApp() {
     document.getElementById('progSessions').textContent = '0';
     buildGraph();
     buildMilestones();
-    resetTapSequence();
+    saveStateToStorage();
+    resetWaveIdle();
   }
 }
+
+(function restoreSession() {
+  try {
+    const saved = localStorage.getItem(STATE_KEY);
+    if (!saved) return;
+    const parsed = JSON.parse(saved);
+    if (!parsed.name) return;
+    Object.assign(state, parsed);
+    document.getElementById('onboarding').classList.remove('active');
+    document.getElementById('app').classList.add('active');
+    const cfg = poisonCfg[state.poison];
+    const costPerPuff = state.costPerDevice / state.puffsPerDevice;
+    const puffsPerWeek = state.puffsPerDevice * state.devicesPerWeek;
+    const hr = new Date().getHours();
+    const greet = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('appGreeting').textContent = greet;
+    document.getElementById('appName').textContent = state.name + '.';
+    document.getElementById('savingsRate').textContent = 'Up to $' + (costPerPuff * puffsPerWeek).toFixed(2) + ' saved this week if you tap every craving';
+    document.getElementById('btnAvoided').textContent = state.totalPuffsAvoided + ' ' + cfg.units + ' avoided';
+    document.getElementById('statToday').textContent = state.todayPuffs;
+    document.getElementById('statStreak').textContent = state.streak;
+    document.getElementById('progStreak').textContent = state.streak;
+    document.getElementById('progSessions').textContent = state.sessions;
+    document.getElementById('setName').value = state.name;
+    document.getElementById('setCost').value = state.costPerDevice;
+    document.getElementById('setPuffs').value = state.puffsPerDevice;
+    document.getElementById('setPerWeek').value = state.devicesPerWeek;
+    document.getElementById('setPoison').textContent = state.poison === 'vape' ? 'Vaping' : state.poison === 'smoke' ? 'Smoking' : 'Both';
+    document.getElementById('setCostLabel').textContent = cfg.costLabel;
+    document.getElementById('setPuffsLabel').textContent = cfg.puffsLabel;
+    document.getElementById('setPerWeekLabel').textContent = cfg.perWeekLabel;
+    buildGraph();
+    buildMilestones();
+    initWaveEngine();
+    startSavingsTicker();
+    if (navigator.onLine) syncQueue();
+  } catch (e) {}
+})();
 </script>
 </body>
 </html>
