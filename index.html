@@ -162,7 +162,7 @@ html, body {
   min-height: 2.6rem;
   margin-bottom: 0.75rem;
   display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-  transition: opacity 0.6s ease;
+  transition: opacity 0.6s ease, color 0.3s ease, transform 0.3s ease;
 }
 .gesture-instruction.fading { opacity: 0.25; }
 .gesture-cue { display: inline-flex; align-items: center; min-width: 2rem; }
@@ -218,7 +218,6 @@ html, body {
 }
 .big-tap-btn.breathing { animation: breathScale 4s ease-in-out infinite; }
 .big-tap-btn.complete { box-shadow: 0 0 0 3px rgba(206,173,110,0.5), 0 28px 64px rgba(0,0,0,0.5); }
-.btn-countdown { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; color: #FFE6A7; line-height: 1; margin-bottom: 0.15rem; }
 .btn-emoji { font-size: 3.8rem; line-height: 1; margin-bottom: 0.3rem; transition: transform 0.15s; filter: drop-shadow(0 2px 6px rgba(46,26,14,0.6)); }
 .btn-label { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--type); font-weight: 500; }
 .btn-avoided { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 600; color: var(--amber); margin-top: 0.1rem; min-height: 2rem; }
@@ -395,7 +394,8 @@ html, body {
 .celeb-emoji { font-size: 5rem; margin-bottom: 1rem; animation: bounce 0.5s ease infinite alternate; }
 @keyframes bounce { from{transform:translateY(0)} to{transform:translateY(-12px)} }
 .celeb-title { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-weight: 300; color: var(--type); margin-bottom: 0.5rem; }
-.celeb-sub { font-size: 1rem; color: var(--type-dim); margin-bottom: 2rem; font-weight: 300; }
+.celeb-sub { font-size: 1rem; color: var(--type-dim); margin-bottom: 0.5rem; font-weight: 300; }
+.celeb-speed { font-size: 1rem; color: var(--type-dim); margin-bottom: 2rem; font-weight: 300; }
 .celeb-btn { background: transparent; color: var(--type); border: 1.5px solid var(--type); padding: 0.9rem 2.5rem; border-radius: 100px; font-family: 'DM Sans', sans-serif; font-size: 1rem; cursor: pointer; transition: all 0.2s; }
 .celeb-btn:hover { background: var(--type); color: var(--bg-deep); }
 
@@ -514,7 +514,6 @@ html, body {
           <div class="big-tap-btn" id="bigTapBtn">
             <div class="ripple" id="ar1"></div>
             <div class="ripple" id="ar2"></div>
-            <div class="btn-countdown" id="btnCountdown">3</div>
             <div class="btn-emoji" id="btnEmoji">✊</div>
             <div class="btn-label" id="btnLabel">Ride the craving wave</div>
             <div class="btn-avoided" id="btnAvoided">0 puffs avoided</div>
@@ -664,6 +663,7 @@ html, body {
   <div class="celeb-emoji" id="celebEmoji">🎉</div>
   <div class="celeb-title" id="celebTitle">Milestone hit!</div>
   <div class="celeb-sub" id="celebSub">Keep going.</div>
+  <div class="celeb-speed" id="celebSpeed"></div>
   <button class="celeb-btn" onclick="closeOverlay()">Keep going 🤘</button>
 </div>
 
@@ -979,16 +979,34 @@ function getAvailableGestures() {
   return state.tapOnly ? TAP_ONLY_GESTURES : ALL_GESTURES;
 }
 
-const GESTURE_UI = {
-  'tap': { text: 'Tap', cue: '●', anim: '' },
-  'double-tap': { text: 'Double tap', cue: '✦', anim: 'cue-double' },
-  'long-press': { text: 'Hold', cue: '...', anim: 'cue-hold' },
-  'swipe-left': { text: 'Swipe left', cue: '←', anim: 'cue-swipe-left' },
-  'swipe-right': { text: 'Swipe right', cue: '→', anim: 'cue-swipe-right' },
-  'swipe-up': { text: 'Swipe up', cue: '↑', anim: 'cue-swipe-up' },
-  'pinch': { text: 'Pinch', cue: '←→', anim: 'cue-pinch' },
-  'shake': { text: 'Shake', cue: '⇔', anim: 'cue-shake' }
+const gestureLabels = {
+  'tap': 'Tap .',
+  'double-tap': 'Double tap ✦',
+  'long-press': 'Hold •••',
+  'swipe-left': 'Swipe left ←',
+  'swipe-right': 'Swipe right →',
+  'swipe-up': 'Swipe up ↑',
+  'pinch': 'Squeeze ←→',
+  'circle': 'Circle ↻',
+  'shake': 'Shake ≋'
 };
+
+const gestureAnim = {
+  'double-tap': 'cue-double',
+  'long-press': 'cue-hold',
+  'swipe-left': 'cue-swipe-left',
+  'swipe-right': 'cue-swipe-right',
+  'swipe-up': 'cue-swipe-up',
+  'pinch': 'cue-pinch',
+  'shake': 'cue-shake'
+};
+
+function getSpeedMessage(avg) {
+  if (avg < 1) return 'Razor sharp.';
+  if (avg < 2) return 'Locked in.';
+  if (avg < 3) return 'Steady.';
+  return 'Distance over speed.';
+}
 
 let wave = {
   status: 'idle',
@@ -1001,6 +1019,8 @@ let wave = {
   timers: [],
   rafId: null,
   gesturePhaseStart: 0,
+  gestureWindowStart: 0,
+  responseTimes: [],
   shakeHandler: null
 };
 
@@ -1100,21 +1120,42 @@ function clearWaveTimers() {
 
 function setIdleInstruction() {
   const el = document.getElementById('gestureInstruction');
-  document.getElementById('gestureText').textContent = 'Swipe right';
+  document.getElementById('gestureText').textContent = gestureLabels['swipe-right'];
   const cue = document.getElementById('gestureCue');
-  cue.textContent = '→';
+  cue.textContent = '';
   cue.className = 'gesture-cue cue-swipe-right';
   el.classList.remove('fading');
 }
 
 function showGestureInstruction(type) {
-  const ui = GESTURE_UI[type];
   const el = document.getElementById('gestureInstruction');
-  document.getElementById('gestureText').textContent = ui.text;
+  document.getElementById('gestureText').textContent = gestureLabels[type] || type;
   const cue = document.getElementById('gestureCue');
-  cue.textContent = ui.cue;
-  cue.className = 'gesture-cue' + (ui.anim ? ' ' + ui.anim : '');
+  cue.textContent = '';
+  cue.className = 'gesture-cue' + (gestureAnim[type] ? ' ' + gestureAnim[type] : '');
   el.classList.remove('fading');
+}
+
+function gestureMatchFeedback(gesture) {
+  const btn = document.getElementById('bigTapBtn');
+  btn.style.background = '#9B2D2A';
+  setTimeout(() => { btn.style.background = ''; }, 200);
+
+  const emoji = document.getElementById('btnEmoji');
+  emoji.style.transform = 'scale(1.4)';
+  emoji.style.transition = 'transform 0.15s ease';
+  setTimeout(() => { emoji.style.transform = 'scale(1)'; }, 180);
+
+  const instr = document.getElementById('gestureInstruction');
+  document.getElementById('gestureText').textContent = gestureLabels[gesture] || gesture;
+  instr.style.color = '#CEAD6E';
+  instr.style.transform = 'scale(1.08)';
+  setTimeout(() => {
+    instr.style.color = '';
+    instr.style.transform = '';
+  }, 300);
+
+  vibrate(40);
 }
 
 function fadeInstruction() {
@@ -1135,7 +1176,6 @@ function resetTapSequence() {
   tapResetTimer = null;
   tapStep = 0;
   const cfg = getPoisonConfig();
-  document.getElementById('btnCountdown').textContent = cfg.taps;
   document.getElementById('btnEmoji').textContent = cfg.emojis[0];
   document.getElementById('bigTapBtn').classList.remove('complete');
 }
@@ -1147,10 +1187,7 @@ function advanceTapSequence() {
   const emoji = document.getElementById('btnEmoji');
 
   tapStep++;
-  emoji.style.transform = 'scale(1.2)';
-  setTimeout(() => { emoji.style.transform = 'scale(1)'; }, 180);
   emoji.textContent = cfg.emojis[tapStep];
-  document.getElementById('btnCountdown').textContent = cfg.taps - tapStep;
 
   if (tapStep === cfg.taps) {
     emoji.textContent = '🤘';
@@ -1203,6 +1240,7 @@ function scheduleGestureCycle() {
   const previewTimer = setTimeout(() => {
     if (wave.status !== 'active') return;
     wave.phase = 'window';
+    wave.gestureWindowStart = Date.now();
   }, PREVIEW_MS);
   wave.timers.push(previewTimer);
 
@@ -1228,7 +1266,9 @@ function onGestureMatched(gesture) {
   const expected = wave.sequence[wave.gestureIndex];
   if (gesture !== expected) return;
 
-  vibrate(40);
+  const responseTime = (Date.now() - wave.gestureWindowStart) / 1000;
+  wave.responseTimes.push(responseTime);
+  gestureMatchFeedback(gesture);
   advanceTapSequence();
   clearWaveTimers();
   wave.gestureIndex++;
@@ -1245,6 +1285,7 @@ function startWaveSession() {
   wave.gestureIndex = 0;
   wave.sessionStart = performance.now();
   wave.elapsed = 0;
+  wave.responseTimes = [];
   resetTapSequence();
   document.getElementById('bigTapBtn').classList.add('breathing');
   document.getElementById('sessionExitBtn').classList.add('visible');
@@ -1277,6 +1318,10 @@ function completeWaveSession() {
   document.getElementById('celebEmoji').textContent = '🤘';
   document.getElementById('celebTitle').textContent = 'You rode the wave';
   document.getElementById('celebSub').textContent = '90 seconds. One craving down.';
+  const avg = wave.responseTimes.length
+    ? wave.responseTimes.reduce((a, b) => a + b, 0) / wave.responseTimes.length
+    : null;
+  document.getElementById('celebSpeed').textContent = avg !== null ? getSpeedMessage(avg) : '';
   document.getElementById('celebOverlay').classList.add('show');
 
   setTimeout(() => resetWaveIdle(), 3000);
@@ -1312,7 +1357,7 @@ function endWaveSession() {
 const gestureState = {
   startX: 0, startY: 0, startTime: 0,
   lastTapTime: 0, moved: false,
-  longPressTimer: null, pinchStartDist: 0,
+  longPressTimer: null, pinchStart: null,
   pinchDetected: false, active: false
 };
 
@@ -1346,7 +1391,9 @@ function onTouchStart(e) {
   if (!btn.contains(e.target) && e.target !== btn) return;
 
   if (e.touches.length === 2) {
-    gestureState.pinchStartDist = touchDistance(e.touches[0], e.touches[1]);
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    gestureState.pinchStart = Math.hypot(dx, dy);
     gestureState.pinchDetected = false;
     gestureState.active = true;
     clearLongPress();
@@ -1374,9 +1421,9 @@ function onTouchStart(e) {
 function onTouchMove(e) {
   if (!gestureState.active) return;
 
-  if (e.touches.length === 2 && gestureState.pinchStartDist > 0) {
+  if (e.touches.length === 2 && gestureState.pinchStart) {
     const dist = touchDistance(e.touches[0], e.touches[1]);
-    if (gestureState.pinchStartDist - dist > 30 && !gestureState.pinchDetected) {
+    if (gestureState.pinchStart - dist > 30 && !gestureState.pinchDetected) {
       gestureState.pinchDetected = true;
       emitGesture('pinch');
       gestureState.active = false;
@@ -1399,7 +1446,20 @@ function onTouchEnd(e) {
   if (!gestureState.active) return;
   clearLongPress();
 
+  if (gestureState.pinchStart && e.changedTouches.length === 2) {
+    const dx = e.changedTouches[0].clientX - e.changedTouches[1].clientX;
+    const dy = e.changedTouches[0].clientY - e.changedTouches[1].clientY;
+    const pinchEnd = Math.hypot(dx, dy);
+    if (gestureState.pinchStart - pinchEnd > 30) {
+      emitGesture('pinch');
+    }
+    gestureState.pinchStart = null;
+    gestureState.active = false;
+    return;
+  }
+
   if (gestureState.pinchDetected) {
+    gestureState.pinchStart = null;
     gestureState.active = false;
     return;
   }
@@ -1551,6 +1611,7 @@ function showCelebration(m) {
   document.getElementById('celebEmoji').textContent = m.emoji;
   document.getElementById('celebTitle').textContent = m.label + '!';
   document.getElementById('celebSub').textContent = 'That is real money back in your pocket. Keep tapping.';
+  document.getElementById('celebSpeed').textContent = '';
   document.getElementById('celebOverlay').classList.add('show');
 }
 
