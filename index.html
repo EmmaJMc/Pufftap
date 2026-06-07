@@ -1027,6 +1027,7 @@ let wave = {
   gestureIndex: 0,
   phase: 'preview',
   sessionStart: 0,
+  startTime: 0,
   elapsed: 0,
   pausedElapsed: 0,
   timers: [],
@@ -1223,6 +1224,7 @@ function resetWaveIdle() {
   wave.phase = 'preview';
   wave.elapsed = 0;
   wave.pausedElapsed = 0;
+  wave.startTime = 0;
   document.getElementById('bigTapBtn').classList.remove('breathing', 'complete');
   document.getElementById('sessionExitBtn').classList.remove('visible');
   document.getElementById('btnLabel').textContent = 'Ride the craving wave';
@@ -1292,6 +1294,8 @@ function onGestureMatched(gesture) {
 }
 
 function startWaveSession() {
+  console.log('Wave session started at:', Date.now(), '| SESSION_MS:', SESSION_MS);
+  wave.startTime = Date.now();
   loadMicroRoutines();
   wave.status = 'active';
   wave.sequence = generateSequence();
@@ -1343,19 +1347,21 @@ function completeWaveSession() {
 
 function abandonWaveSession() {
   if (wave.status !== 'active') return;
+  console.log('Session abandoned at elapsed:', wave.elapsed, '| actual time since start:', Date.now() - wave.startTime);
   clearWaveTimers();
   stopShakeListener();
   wave.status = 'abandoned';
-  wave.pausedElapsed = wave.elapsed;
+  wave.pausedElapsed = Date.now() - wave.startTime;
   vibrate(20);
-  const seconds = Math.floor(wave.pausedElapsed / 1000);
-  document.getElementById('abandonTitle').textContent = 'You made it ' + seconds + ' seconds';
+  const elapsed = Math.round((Date.now() - wave.startTime) / 1000);
+  document.getElementById('abandonTitle').textContent = 'You made it ' + elapsed + ' seconds';
   document.getElementById('abandonOverlay').classList.add('show');
 }
 
 function resumeWaveSession() {
   document.getElementById('abandonOverlay').classList.remove('show');
   wave.status = 'active';
+  wave.startTime = Date.now() - wave.pausedElapsed;
   wave.sessionStart = performance.now() - wave.pausedElapsed;
   startShakeListener();
   scheduleGestureCycle();
