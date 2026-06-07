@@ -683,8 +683,40 @@ let state = {
 
 // ── POISON CONFIG ──
 const poisonCfg = {
-  vape: { taps: 3, unit: 'puff', units: 'puffs', deviceLabel: 'device', costLabel: 'Cost per vape', puffsLabel: 'Puffs per vape', perWeekLabel: 'Vapes per week', emojis: ['✊','☝️','✌️','🤘'], ob2q: 'How much does each vape cost?', ob3qHtml: 'Puffs per<br><em>vape?</em>', ob3sub: 'Check the label. Around 400 is typical for a disposable.', ob3placeholder: 'e.g. 400', ob4qHtml: 'How many vapes per<br><em>week?</em>', ob4sub: 'Count disposables or pods you go through each week', ob4placeholder: 'e.g. 2' },
-  smoke: { taps: 10, unit: 'drag', units: 'drags', deviceLabel: 'pack', costLabel: 'Cost per pack', puffsLabel: 'Cigarettes per pack', perWeekLabel: 'Packs per week', emojis: ['✊','☝️','✌️','🤟','🖖','🖐️','🤙','👆','🤞','👌','🤘'], ob2q: 'How much does a pack cost?', ob3qHtml: 'Cigarettes per<br><em>pack?</em>', ob3sub: 'Standard packs have 20 cigarettes', ob3placeholder: '20', ob4qHtml: 'How many packs per<br><em>week?</em>', ob4sub: 'Count the packs you get through each week', ob4placeholder: 'e.g. 1' }
+  vape: {
+    taps: 3,
+    unit: 'puff', units: 'puffs',
+    deviceLabel: 'vape',
+    costLabel: 'Cost per vape',
+    puffsLabel: 'Puffs per vape',
+    perWeekLabel: 'Vapes per week',
+    emojis: ['✊','☝️','✌️','🤘'],
+    ob2q: 'How much does each vape cost?',
+    ob2qHtml: 'How much does each<br><em>vape cost?</em>',
+    ob3qHtml: 'Puffs per<br><em>vape?</em>',
+    ob3sub: 'Check the label. Around 400 is typical for a disposable.',
+    ob3placeholder: 'e.g. 400',
+    ob4qHtml: 'How many vapes per<br><em>week?</em>',
+    ob4sub: 'Count disposables or pods you go through each week',
+    ob4placeholder: 'e.g. 2'
+  },
+  smoke: {
+    taps: 10,
+    unit: 'drag', units: 'drags',
+    deviceLabel: 'pack',
+    costLabel: 'Cost per pack',
+    puffsLabel: 'Cigarettes per pack',
+    perWeekLabel: 'Packs per week',
+    emojis: ['✊','☝️','✌️','🤟','🖖','🖐️','🤙','👆','🤞','👌','🤘'],
+    ob2q: 'How much does a pack cost?',
+    ob2qHtml: 'How much does a<br><em>pack cost?</em>',
+    ob3qHtml: 'Cigarettes per<br><em>pack?</em>',
+    ob3sub: 'Standard packs have 20 cigarettes',
+    ob3placeholder: '20',
+    ob4qHtml: 'How many packs per<br><em>week?</em>',
+    ob4sub: 'Count the packs you go through each week',
+    ob4placeholder: 'e.g. 1'
+  }
 };
 
 const milestones = [
@@ -708,7 +740,7 @@ function normalizeState() {
 function applyPoisonLabels(poison) {
   const cfg = poisonCfg[poison];
   if (!cfg) return;
-  document.getElementById('obs2q').innerHTML = cfg.ob2q.replace(/(.+cost\?)/, (m) => m.replace('cost?', '<br><em>cost?</em>'));
+  document.getElementById('obs2q').innerHTML = cfg.ob2qHtml || cfg.ob2q.replace(/(.+cost\?)/, (m) => m.replace('cost?', '<br><em>cost?</em>'));
   document.getElementById('obs2label').textContent = cfg.costLabel + ' ($)';
   document.getElementById('obs3q').innerHTML = cfg.ob3qHtml;
   document.getElementById('obs3sub').textContent = cfg.ob3sub;
@@ -734,6 +766,21 @@ function obNext(step) {
   if (step === 1) {
     state.poison = obPoison;
     applyPoisonLabels(obPoison);
+    if (obPoison === 'smoke') {
+      document.getElementById('obs3q').innerHTML = 'Cigarettes per<br><em>pack?</em>';
+      document.getElementById('obs3sub').textContent = 'Standard packs have 20 cigarettes';
+      document.getElementById('inputPuffs').placeholder = '20';
+      document.getElementById('obs4q').innerHTML = 'How many packs per<br><em>week?</em>';
+      document.getElementById('obs4sub').textContent = 'Count the packs you go through each week';
+      document.getElementById('inputPerWeek').placeholder = 'e.g. 1';
+    } else {
+      document.getElementById('obs3q').innerHTML = 'Puffs per<br><em>vape?</em>';
+      document.getElementById('obs3sub').textContent = 'Check the label. Around 400 is typical for a disposable.';
+      document.getElementById('inputPuffs').placeholder = 'e.g. 400';
+      document.getElementById('obs4q').innerHTML = 'How many vapes per<br><em>week?</em>';
+      document.getElementById('obs4sub').textContent = 'Count disposables or pods you go through each week';
+      document.getElementById('inputPerWeek').placeholder = 'e.g. 2';
+    }
   }
   if (step === 2) {
     const v = parseFloat(document.getElementById('inputCost').value);
@@ -1618,6 +1665,8 @@ function resetApp() {
     if (navigator.onLine) syncQueue();
   } catch (e) {}
 })();
+
+applyPoisonLabels('vape');
 </script>
 </body>
 </html>
