@@ -1219,6 +1219,7 @@ function scheduleGestureCycle() {
 }
 
 function onGestureMatched(gesture) {
+  console.log('Gesture detected:', gesture, '| wave status:', wave.status, '| expected:', wave.sequence?.[wave.gestureIndex]);
   if (wave.status === 'idle' && gesture === 'swipe-right') {
     startWaveSession();
     return;
@@ -1253,6 +1254,7 @@ function startWaveSession() {
   history.pushState({ wave: true }, '');
   scheduleGestureCycle();
   wave.rafId = requestAnimationFrame(tickWave);
+  console.log('Wave session started, sequence:', wave.sequence);
 }
 
 function completeWaveSession() {
