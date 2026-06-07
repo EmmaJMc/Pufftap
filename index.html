@@ -168,14 +168,10 @@ html, body {
 .big-tap-btn:active { transform: scale(0.92); }
 .big-tap-btn.pressed { transform: scale(0.92); }
 .big-tap-btn.complete { transform: scale(1.07); box-shadow: 0 0 0 3px rgba(206,173,110,0.5), 0 28px 64px rgba(0,0,0,0.5); }
+.btn-countdown { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; color: #FFE6A7; line-height: 1; margin-bottom: 0.15rem; }
 .btn-emoji { font-size: 3.8rem; line-height: 1; margin-bottom: 0.3rem; transition: transform 0.15s; filter: drop-shadow(0 2px 6px rgba(46,26,14,0.6)); }
 .btn-label { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--type); font-weight: 500; }
 .btn-avoided { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 600; color: var(--amber); margin-top: 0.1rem; min-height: 2rem; }
-
-.tap-dots { display: flex; gap: 5px; margin-top: 1rem; }
-.t-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,230,167,0.15); transition: all 0.15s; }
-.t-dot.lit { background: var(--type); transform: scale(1.25); }
-.t-dot.done { background: var(--btn); }
 
 .ripple { position: absolute; inset: -24px; border-radius: 50%; border: 2px solid rgba(206,173,110,0.35); opacity: 0; pointer-events: none; }
 .ripple.go { animation: ripp 0.7s ease-out forwards; }
@@ -342,16 +338,16 @@ html, body {
 
     <!-- Step 3: Puffs per device -->
     <div class="ob-step" id="obs3">
-      <div class="ob-q" id="obs3q">Puffs per<br><em>device?</em></div>
-      <div class="ob-sub" id="obs3sub">Check the label or take a guess. Around 400 is typical for a disposable vape.</div>
+      <div class="ob-q" id="obs3q">Puffs per<br><em>vape?</em></div>
+      <div class="ob-sub" id="obs3sub">Check the label. Around 400 is typical for a disposable.</div>
       <input class="ob-input" id="inputPuffs" type="number" placeholder="e.g. 400" min="1">
       <button class="ob-btn" onclick="obNext(3)">Continue</button>
     </div>
 
     <!-- Step 4: How many per week -->
     <div class="ob-step" id="obs4">
-      <div class="ob-q">How many per<br><em>week?</em></div>
-      <div class="ob-sub" id="obs4sub">Be honest. This is just for your savings estimate.</div>
+      <div class="ob-q" id="obs4q">How many vapes per<br><em>week?</em></div>
+      <div class="ob-sub" id="obs4sub">Count disposables or pods you go through</div>
       <input class="ob-input" id="inputPerWeek" type="number" placeholder="e.g. 2" min="1">
       <button class="ob-btn" onclick="obFinish()">Let's go 🤘</button>
     </div>
@@ -388,11 +384,11 @@ html, body {
         <div class="big-tap-btn" id="bigTapBtn" onclick="handleAppTap()">
           <div class="ripple" id="ar1"></div>
           <div class="ripple" id="ar2"></div>
+          <div class="btn-countdown" id="btnCountdown">3</div>
           <div class="btn-emoji" id="btnEmoji">✊</div>
           <div class="btn-label" id="btnLabel">Tap instead of puffing</div>
           <div class="btn-avoided" id="btnAvoided">0 puffs avoided</div>
         </div>
-        <div class="tap-dots" id="tapDots"></div>
       </div>
 
       <div class="stats-row">
@@ -526,9 +522,9 @@ let state = {
 
 // ── POISON CONFIG ──
 const poisonCfg = {
-  vape: { taps: 3, unit: 'puff', units: 'puffs', deviceLabel: 'device', costLabel: 'Cost per device', puffsLabel: 'Puffs per device', perWeekLabel: 'Devices per week', emojis: ['✊','☝️','✌️','🤘'], ob2q: 'How much does each device cost?', ob3q: 'Puffs per device?', ob3sub: 'Check the label or take a guess. Around 400 is typical for a disposable vape.' },
-  smoke: { taps: 10, unit: 'drag', units: 'drags', deviceLabel: 'pack', costLabel: 'Cost per pack', puffsLabel: 'Cigarettes per pack', perWeekLabel: 'Packs per week', emojis: ['✊','☝️','✌️','🤟','🖖','🖐️','🤙','👆','🤞','👌','🤘'], ob2q: 'How much does a pack cost?', ob3q: 'Cigarettes per pack?', ob3sub: 'Standard packs are 20. Each ciggie is roughly 10 drags.' },
-  both: { taps: 3, unit: 'hit', units: 'hits', deviceLabel: 'device/pack', costLabel: 'Avg cost per item', puffsLabel: 'Uses per item', perWeekLabel: 'Items per week', emojis: ['✊','☝️','✌️','🤘'], ob2q: 'Average cost per vape or pack?', ob3q: 'Uses per item?', ob3sub: 'Average across what you use. A rough number is fine.' }
+  vape: { taps: 3, unit: 'puff', units: 'puffs', deviceLabel: 'device', costLabel: 'Cost per vape', puffsLabel: 'Puffs per vape', perWeekLabel: 'Vapes per week', emojis: ['✊','☝️','✌️','🤘'], ob2q: 'How much does each vape cost?', ob3qHtml: 'Puffs per<br><em>vape?</em>', ob3sub: 'Check the label. Around 400 is typical for a disposable.', ob3placeholder: 'e.g. 400', ob4qHtml: 'How many vapes per<br><em>week?</em>', ob4sub: 'Count disposables or pods you go through', ob4placeholder: 'e.g. 2' },
+  smoke: { taps: 10, unit: 'drag', units: 'drags', deviceLabel: 'pack', costLabel: 'Cost per pack', puffsLabel: 'Cigarettes per pack', perWeekLabel: 'Packs per week', emojis: ['✊','☝️','✌️','🤟','🖖','🖐️','🤙','👆','🤞','👌','🤘'], ob2q: 'How much does a pack cost?', ob3qHtml: 'Cigarettes per<br><em>pack?</em>', ob3sub: 'Standard packs are 20. Each cigarette is roughly 10 drags.', ob3placeholder: '20', ob4qHtml: 'How many packs per<br><em>week?</em>', ob4sub: 'A standard pack has 20 cigarettes', ob4placeholder: 'e.g. 1' },
+  both: { taps: 3, unit: 'hit', units: 'hits', deviceLabel: 'device/pack', costLabel: 'Avg cost per item', puffsLabel: 'Uses per item', perWeekLabel: 'Items per week', emojis: ['✊','☝️','✌️','🤘'], ob2q: 'Average cost per vape or pack?', ob3qHtml: 'Uses per<br><em>item?</em>', ob3sub: 'Average across what you use. A rough number is fine.', ob3placeholder: 'e.g. 400', ob4qHtml: 'How many devices or packs per<br><em>week?</em>', ob4sub: 'Be honest. This is just for your savings estimate.', ob4placeholder: 'e.g. 3' }
 };
 
 let tapStep = 0, resetTimer = null;
@@ -560,9 +556,12 @@ function obNext(step) {
     const cfg = poisonCfg[obPoison];
     document.getElementById('obs2q').innerHTML = cfg.ob2q.replace(/(.+cost\?)/, (m) => m.replace('cost?','<br><em>cost?</em>'));
     document.getElementById('obs2label').textContent = cfg.costLabel + ' ($)';
-    document.getElementById('obs3q').innerHTML = cfg.ob3q.replace(/\?/, '<br><em>' + cfg.ob3q.split(' ').pop() + '</em>').replace(cfg.ob3q.split(' ').pop() + '<br><em>' + cfg.ob3q.split(' ').pop() + '</em>', cfg.ob3q.split(' ').slice(0,-1).join(' ') + '<br><em>' + cfg.ob3q.split(' ').pop() + '</em>');
+    document.getElementById('obs3q').innerHTML = cfg.ob3qHtml;
     document.getElementById('obs3sub').textContent = cfg.ob3sub;
-    document.getElementById('obs4sub').textContent = 'Be honest. This is just for your savings estimate.';
+    document.getElementById('inputPuffs').placeholder = cfg.ob3placeholder;
+    document.getElementById('obs4q').innerHTML = cfg.ob4qHtml;
+    document.getElementById('obs4sub').textContent = cfg.ob4sub;
+    document.getElementById('inputPerWeek').placeholder = cfg.ob4placeholder;
   }
   if (step === 2) {
     const v = parseFloat(document.getElementById('inputCost').value);
@@ -625,8 +624,7 @@ function initApp() {
   document.getElementById('btnLabel').textContent = 'Tap instead of puffing';
   document.getElementById('btnAvoided').textContent = '0 ' + cfg.units + ' avoided';
 
-  // Build dots
-  buildDots();
+  resetTapSequence();
 
   // Settings panel
   document.getElementById('setName').value = state.name;
@@ -648,16 +646,12 @@ function initApp() {
   startSavingsTicker();
 }
 
-function buildDots() {
+function resetTapSequence() {
   const cfg = poisonCfg[state.poison];
-  const container = document.getElementById('tapDots');
-  container.innerHTML = '';
-  for (let i = 0; i < cfg.taps; i++) {
-    const d = document.createElement('div');
-    d.className = 'tap-dot';
-    d.id = 'td' + i;
-    container.appendChild(d);
-  }
+  tapStep = 0;
+  document.getElementById('btnCountdown').textContent = cfg.taps;
+  document.getElementById('btnEmoji').textContent = cfg.emojis[0];
+  document.getElementById('bigTapBtn').classList.remove('complete');
 }
 
 function buildGraph() {
@@ -712,10 +706,12 @@ function startSavingsTicker() {
 function handleAppTap() {
   clearTimeout(resetTimer);
   const cfg = poisonCfg[state.poison];
-  tapStep++;
-
   const btn = document.getElementById('bigTapBtn');
   const emoji = document.getElementById('btnEmoji');
+  const countdown = document.getElementById('btnCountdown');
+
+  tapStep++;
+
   btn.classList.add('pressed');
   setTimeout(() => btn.classList.remove('pressed'), 120);
 
@@ -723,13 +719,10 @@ function handleAppTap() {
   setTimeout(() => emoji.style.transform = 'scale(1)', 180);
   emoji.textContent = cfg.emojis[tapStep];
 
-  for (let i = 0; i < cfg.taps; i++) {
-    const d = document.getElementById('td' + i);
-    if (d) d.classList.toggle('lit', i < tapStep);
-  }
+  const remaining = cfg.taps - tapStep;
+  countdown.textContent = remaining;
 
   if (tapStep === cfg.taps) {
-    // Completed a full session
     state.totalPuffsAvoided++;
     state.todayPuffs++;
     state.sessions++;
@@ -741,6 +734,8 @@ function handleAppTap() {
     r1.classList.remove('go'); r2.classList.remove('go2');
     void r1.offsetWidth;
     r1.classList.add('go'); r2.classList.add('go2');
+
+    countdown.textContent = '✓';
 
     const cfg2 = poisonCfg[state.poison];
     const avoided = document.getElementById('btnAvoided');
@@ -755,28 +750,12 @@ function handleAppTap() {
     document.getElementById('progSessions').textContent = state.sessions;
     buildGraph();
 
-    // Rotate motivators
     const motivators = ['Every tap is a win.', 'The urge will pass. It always does.', 'Your future self is watching.', 'One tap at a time.', 'You chose this. Keep going.', 'The ritual is the reward now.', 'That one did not count. This one does.', 'Streak intact. Keep it that way.'];
     document.getElementById('tapMotivator').textContent = motivators[Math.floor(Math.random() * motivators.length)];
 
-    setTimeout(() => {
-      tapStep = 0;
-      emoji.textContent = cfg.emojis[0];
-      btn.classList.remove('complete');
-      for (let i = 0; i < cfg.taps; i++) {
-        const d = document.getElementById('td' + i);
-        if (d) d.classList.remove('lit', 'done');
-      }
-    }, 1500);
+    setTimeout(() => resetTapSequence(), 1500);
   } else {
-    resetTimer = setTimeout(() => {
-      tapStep = 0;
-      emoji.textContent = cfg.emojis[0];
-      for (let i = 0; i < cfg.taps; i++) {
-        const d = document.getElementById('td' + i);
-        if (d) d.classList.remove('lit');
-      }
-    }, 4000);
+    resetTimer = setTimeout(() => resetTapSequence(), 4000);
   }
 }
 
@@ -825,14 +804,21 @@ function saveSettings() {
 
 function resetApp() {
   if (confirm('Reset all your data? This cannot be undone.')) {
-    state.totalPuffsAvoided = 0; state.todayPuffs = 0;
-    state.sessions = 0; state.weekData = [0,0,0,0,0,0,0];
+    state.totalPuffsAvoided = 0;
+    state.todayPuffs = 0;
+    state.sessions = 0;
+    state.weekData = [0,0,0,0,0,0,0];
     state.milestonesSeen = [];
+    const cfg = poisonCfg[state.poison];
     document.getElementById('totalSaved').textContent = '0.00';
-    document.getElementById('btnAvoided').textContent = '0 ' + poisonCfg[state.poison].units + ' avoided';
+    document.getElementById('btnAvoided').textContent = '0 ' + cfg.units + ' avoided';
     document.getElementById('statToday').textContent = '0';
     document.getElementById('statStreak').textContent = '1';
-    buildGraph(); buildMilestones();
+    document.getElementById('progStreak').textContent = '1';
+    document.getElementById('progSessions').textContent = '0';
+    buildGraph();
+    buildMilestones();
+    resetTapSequence();
   }
 }
 </script>
