@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, touch-action=manipulation">
 <meta name="theme-color" content="#432818">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -222,6 +222,11 @@ html, body {
 }
 .big-tap-btn.breathing { animation: breathScale 4s ease-in-out infinite; }
 .big-tap-btn.complete { box-shadow: 0 0 0 3px rgba(206,173,110,0.5), 0 28px 64px rgba(0,0,0,0.5); }
+#bigTapBtn {
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
 .btn-emoji { font-size: 3.8rem; line-height: 1; margin-bottom: 0.3rem; transition: transform 0.15s; filter: drop-shadow(0 2px 6px rgba(46,26,14,0.6)); }
 .btn-label { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--type); font-weight: 500; }
 .btn-avoided { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 600; color: var(--amber); margin-top: 0.1rem; min-height: 2rem; }
@@ -1324,12 +1329,13 @@ function completeWaveSession() {
   if (navigator.onLine) syncQueue();
 
   document.getElementById('celebEmoji').textContent = '🤘';
-  document.getElementById('celebTitle').textContent = 'You rode the wave';
+  document.getElementById('celebTitle').textContent = 'You rode the wave.';
   document.getElementById('celebSub').textContent = '90 seconds. One craving down.';
-  const avg = wave.responseTimes.length
-    ? wave.responseTimes.reduce((a, b) => a + b, 0) / wave.responseTimes.length
-    : null;
-  document.getElementById('celebSpeed').textContent = avg !== null ? getSpeedMessage(avg) : '';
+  document.getElementById('celebSpeed').textContent = '';
+  if (wave.responseTimes && wave.responseTimes.length > 0) {
+    const avg = wave.responseTimes.reduce((a, b) => a + b, 0) / wave.responseTimes.length;
+    document.getElementById('celebSpeed').textContent = getSpeedMessage(avg);
+  }
   document.getElementById('celebOverlay').classList.add('show');
 
   setTimeout(() => resetWaveIdle(), 3000);
@@ -1603,7 +1609,8 @@ function initWaveEngine() {
   if (waveEngineInitialized) return;
   waveEngineInitialized = true;
   const btn = document.getElementById('bigTapBtn');
-  btn.addEventListener('touchstart', onTouchStart, { passive: true });
+  btn.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+  btn.addEventListener('touchstart', onTouchStart, { passive: false });
   btn.addEventListener('touchmove', onTouchMove, { passive: true });
   btn.addEventListener('touchend', onTouchEnd);
   btn.addEventListener('mousedown', onMouseDown);
