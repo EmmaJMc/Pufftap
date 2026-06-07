@@ -330,6 +330,48 @@ html, body {
 .settings-btn.danger { color: rgba(255,100,80,0.7); border-color: rgba(255,100,80,0.2); }
 .settings-btn.danger:hover { color: rgba(255,100,80,1); border-color: rgba(255,100,80,0.5); }
 
+.speed-selector {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.speed-option {
+  background: var(--bg-mid);
+  border: 1.5px solid rgba(255,230,167,0.15);
+  border-radius: 12px; padding: 0.75rem 0.4rem;
+  font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
+  color: var(--type-dim); cursor: pointer; transition: all 0.2s;
+}
+.speed-option.active {
+  border-color: #CEAD6E;
+  background: rgba(206,173,110,0.12);
+  color: var(--type);
+}
+.speed-hint {
+  font-size: 0.78rem; color: var(--type-faint);
+  margin-bottom: 0.75rem; line-height: 1.4;
+}
+.settings-row-toggle { align-items: center; }
+.settings-row-stack { display: flex; flex-direction: column; gap: 0.15rem; }
+.settings-row-sublabel { font-size: 0.78rem; color: var(--type-faint); }
+.toggle-switch {
+  width: 48px; height: 28px; border-radius: 14px; flex-shrink: 0;
+  border: 1.5px solid rgba(255,230,167,0.2);
+  background: var(--bg-deep); position: relative; cursor: pointer; padding: 0;
+}
+.toggle-switch.active {
+  background: rgba(206,173,110,0.25);
+  border-color: #CEAD6E;
+}
+.toggle-knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--type-dim); transition: transform 0.2s, background 0.2s;
+}
+.toggle-switch.active .toggle-knob {
+  transform: translateX(20px);
+  background: #CEAD6E;
+}
+
 .about-card { background: var(--bg-mid); border: 1px solid rgba(255,230,167,0.08); border-radius: 18px; padding: 1.5rem; text-align: center; }
 .about-logo { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 600; color: var(--type); margin-bottom: 0.25rem; }
 .about-logo span { color: var(--btn); }
@@ -522,6 +564,25 @@ html, body {
     <!-- SETTINGS -->
     <div class="tab-pane" id="tab-settings">
       <div class="settings-section">
+        <div class="settings-section-label">Experience</div>
+        <div class="speed-selector">
+          <button type="button" class="speed-option" data-speed="relaxed" onclick="setGestureSpeed('relaxed')">Relaxed</button>
+          <button type="button" class="speed-option active" data-speed="standard" onclick="setGestureSpeed('standard')">Standard</button>
+          <button type="button" class="speed-option" data-speed="challenge" onclick="setGestureSpeed('challenge')">Challenge</button>
+        </div>
+        <p class="speed-hint">Adjust if gestures feel rushed or too slow.</p>
+        <div class="settings-row settings-row-toggle">
+          <div class="settings-row-stack">
+            <span class="settings-row-label">Tap-only</span>
+            <span class="settings-row-sublabel">For users who find swipes or pinches difficult</span>
+          </div>
+          <button type="button" class="toggle-switch" id="tapOnlyToggle" aria-pressed="false" onclick="toggleTapOnly()">
+            <span class="toggle-knob"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="settings-section">
         <div class="settings-section-label">Your habit</div>
         <div class="settings-row">
           <span class="settings-row-label">Name</span>
@@ -612,7 +673,9 @@ let state = {
   sessions: 0, streak: 1,
   weekData: [0,0,0,0,0,0,0],
   milestonesSeen: [],
-  startedAt: Date.now()
+  startedAt: Date.now(),
+  gestureSpeed: 'standard',
+  tapOnly: false
 };
 
 // ── POISON CONFIG ──
@@ -719,6 +782,7 @@ function initApp() {
   document.getElementById('btnAvoided').textContent = '0 ' + cfg.units + ' avoided';
 
   initWaveEngine();
+  syncExperienceSettingsUI();
   saveStateToStorage();
 
   // Settings panel
@@ -834,11 +898,23 @@ window.addEventListener('online', syncQueue);
 
 // ── WAVE SESSION ENGINE ──
 const SESSION_MS = 90000;
-const GESTURE_SLOT_MS = 4000;
 const PREVIEW_MS = 2000;
-const WINDOW_MS = 2000;
 const ARC_LENGTH = 691.15;
-const GESTURE_TYPES = ['tap', 'double-tap', 'long-press', 'swipe-left', 'swipe-right', 'swipe-up', 'pinch', 'shake'];
+const ALL_GESTURES = ['tap', 'double-tap', 'long-press', 'swipe-left', 'swipe-right', 'swipe-up', 'pinch', 'shake'];
+const TAP_ONLY_GESTURES = ['tap', 'double-tap', 'long-press'];
+
+function getGestureWindowMs() {
+  const speeds = { relaxed: 5000, standard: 3000, challenge: 2000 };
+  return speeds[state.gestureSpeed] || 3000;
+}
+
+function getGestureSlotMs() {
+  return PREVIEW_MS + getGestureWindowMs();
+}
+
+function getAvailableGestures() {
+  return state.tapOnly ? TAP_ONLY_GESTURES : ALL_GESTURES;
+}
 
 const GESTURE_UI = {
   'tap': { text: 'Tap', cue: '●', anim: '' },
@@ -888,12 +964,19 @@ function saveMicroRoutines() {
 }
 
 function randomGesture() {
-  return GESTURE_TYPES[Math.floor(Math.random() * GESTURE_TYPES.length)];
+  const types = getAvailableGestures();
+  return types[Math.floor(Math.random() * types.length)];
 }
 
 function generateMicroRoutine() {
+  const available = getAvailableGestures();
   if (lastMicroRoutines.length > 0 && Math.random() < 0.35) {
-    return lastMicroRoutines[Math.floor(Math.random() * lastMicroRoutines.length)].slice();
+    const candidates = lastMicroRoutines
+      .map((r) => r.filter((g) => available.includes(g)))
+      .filter((r) => r.length === 3);
+    if (candidates.length > 0) {
+      return candidates[Math.floor(Math.random() * candidates.length)].slice();
+    }
   }
   const routine = [randomGesture(), randomGesture(), randomGesture()];
   lastMicroRoutines.push(routine);
@@ -903,7 +986,7 @@ function generateMicroRoutine() {
 }
 
 function generateSequence() {
-  const count = Math.floor(SESSION_MS / GESTURE_SLOT_MS);
+  const count = Math.floor(SESSION_MS / getGestureSlotMs());
   const sequence = [];
   let i = 0;
   while (i < count) {
@@ -1028,7 +1111,7 @@ function scheduleGestureCycle() {
       const nextTimer = setTimeout(scheduleGestureCycle, 0);
       wave.timers.push(nextTimer);
     }
-  }, GESTURE_SLOT_MS);
+  }, getGestureSlotMs());
   wave.timers.push(slotTimer);
 }
 
@@ -1394,6 +1477,32 @@ function switchTab(tab) {
   });
 }
 
+// ── EXPERIENCE SETTINGS ──
+function syncExperienceSettingsUI() {
+  if (!state.gestureSpeed) state.gestureSpeed = 'standard';
+  if (state.tapOnly === undefined) state.tapOnly = false;
+  document.querySelectorAll('.speed-option').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.speed === state.gestureSpeed);
+  });
+  const toggle = document.getElementById('tapOnlyToggle');
+  if (toggle) {
+    toggle.classList.toggle('active', state.tapOnly);
+    toggle.setAttribute('aria-pressed', String(state.tapOnly));
+  }
+}
+
+function setGestureSpeed(speed) {
+  state.gestureSpeed = speed;
+  syncExperienceSettingsUI();
+  saveStateToStorage();
+}
+
+function toggleTapOnly() {
+  state.tapOnly = !state.tapOnly;
+  syncExperienceSettingsUI();
+  saveStateToStorage();
+}
+
 // ── SETTINGS ──
 function saveSettings() {
   state.name = document.getElementById('setName').value || state.name;
@@ -1463,6 +1572,7 @@ function resetApp() {
     buildGraph();
     buildMilestones();
     initWaveEngine();
+    syncExperienceSettingsUI();
     startSavingsTicker();
     if (navigator.onLine) syncQueue();
   } catch (e) {}
