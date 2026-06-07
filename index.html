@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#432818">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>PuffTap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #432818;
+  --bg-mid: #3a2214;
+  --bg-deep: #2e1a0e;
+  --type: #FFE6A7;
+  --type-dim: rgba(255,230,167,0.55);
+  --type-faint: rgba(255,230,167,0.22);
+  --btn: #CEAD6E;
+  --rust: #6F1D1B;
+  --amber: #99582A;
+  --tab-h: 72px;
+}
+html, body {
+  height: 100%; width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--type);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── SCREENS ── */
+.screen { position: absolute; inset: 0; display: none; flex-direction: column; }
+.screen.active { display: flex; }
+
+/* ── ONBOARDING ── */
+#onboarding {
+  background: var(--bg-deep);
+  justify-content: center; align-items: center;
+  padding: 2rem;
+}
+.ob-wrap { width: 100%; max-width: 400px; }
+.ob-logo { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 600; color: var(--type); text-align: center; margin-bottom: 2.5rem; }
+.ob-logo span { color: var(--btn); }
+.ob-step { display: none; }
+.ob-step.active { display: block; }
+.ob-q {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem; font-weight: 300; line-height: 1.2;
+  color: var(--type); margin-bottom: 0.5rem;
+}
+.ob-q em { font-style: italic; color: var(--btn); }
+.ob-sub { font-size: 0.85rem; color: var(--type-dim); margin-bottom: 2rem; font-weight: 300; }
+
+.ob-input {
+  width: 100%; background: rgba(255,230,167,0.06);
+  border: 1.5px solid rgba(255,230,167,0.2);
+  border-radius: 14px; padding: 1rem 1.25rem;
+  font-family: 'DM Sans', sans-serif; font-size: 1.1rem;
+  color: var(--type); outline: none; transition: border-color 0.2s;
+  margin-bottom: 1.25rem;
+}
+.ob-input:focus { border-color: var(--btn); }
+.ob-input::placeholder { color: var(--type-faint); }
+
+.ob-options { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
+.ob-option {
+  background: rgba(255,230,167,0.05);
+  border: 1.5px solid rgba(255,230,167,0.15);
+  border-radius: 14px; padding: 1rem 1.25rem;
+  font-family: 'DM Sans', sans-serif; font-size: 1rem;
+  color: var(--type-dim); cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.ob-option:hover { border-color: var(--btn); color: var(--type); }
+.ob-option.selected { border-color: var(--btn); background: rgba(206,173,110,0.12); color: var(--type); }
+.ob-option .opt-emoji { font-size: 1.4rem; }
+.ob-option .opt-label { font-weight: 400; }
+.ob-option .opt-sub { font-size: 0.78rem; color: var(--type-faint); display: block; margin-top: 1px; }
+
+.ob-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem; }
+.ob-label { font-size: 0.78rem; color: var(--type-dim); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.4rem; }
+
+.ob-btn {
+  width: 100%; background: transparent;
+  color: var(--type); border: 1.5px solid var(--type);
+  padding: 1rem; border-radius: 14px;
+  font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 400;
+  cursor: pointer; transition: all 0.2s;
+}
+.ob-btn:hover { background: var(--type); color: var(--bg-deep); }
+
+.ob-progress { display: flex; gap: 6px; justify-content: center; margin-bottom: 2rem; }
+.ob-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,230,167,0.2); transition: all 0.3s; }
+.ob-dot.active { background: var(--btn); transform: scale(1.3); }
+.ob-dot.done { background: rgba(206,173,110,0.5); }
+
+/* ── APP SHELL ── */
+#app { background: var(--bg); }
+.app-header {
+  padding: 3.5rem 1.5rem 1rem;
+  background: var(--bg-deep);
+  border-bottom: 1px solid rgba(255,230,167,0.07);
+  flex-shrink: 0;
+}
+.app-header-row { display: flex; justify-content: space-between; align-items: flex-start; }
+.app-greeting { font-size: 0.78rem; color: var(--type-dim); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.2rem; }
+.app-name { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 400; color: var(--type); }
+.app-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 600; color: var(--type-dim); }
+.app-logo span { color: var(--btn); }
+
+.tab-content { flex: 1; overflow-y: auto; overflow-x: hidden; }
+.tab-pane { display: none; padding: 1.5rem; padding-bottom: calc(var(--tab-h) + 1rem); min-height: 100%; }
+.tab-pane.active { display: block; }
+
+/* ── TAB BAR ── */
+.tab-bar {
+  height: var(--tab-h);
+  background: var(--bg-deep);
+  border-top: 1px solid rgba(255,230,167,0.08);
+  display: flex; align-items: center; justify-content: space-around;
+  flex-shrink: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.tab-btn {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 4px;
+  background: none; border: none; cursor: pointer;
+  padding: 0.5rem; transition: opacity 0.2s;
+  color: var(--type-faint);
+}
+.tab-btn.active { color: var(--btn); }
+.tab-btn svg { transition: transform 0.2s; }
+.tab-btn.active svg { transform: scale(1.1); }
+.tab-btn span { font-size: 0.68rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; }
+
+/* ── HOME TAB ── */
+.savings-hero {
+  background: var(--bg-mid);
+  border-radius: 20px; padding: 1.5rem;
+  text-align: center; margin-bottom: 1.25rem;
+  border: 1px solid rgba(255,230,167,0.08);
+}
+.savings-hero-label { font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--type-faint); margin-bottom: 0.25rem; }
+.savings-hero-amount { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; color: var(--type); line-height: 1; letter-spacing: -0.02em; }
+.savings-hero-amount span { color: var(--btn); }
+.savings-hero-sub { font-size: 0.8rem; color: var(--type-dim); margin-top: 0.3rem; }
+
+.tap-section { display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem; }
+.tap-motivator { font-size: 0.82rem; color: var(--type-dim); margin-bottom: 1rem; font-style: italic; text-align: center; font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; }
+
+.big-tap-btn {
+  width: 200px; height: 200px;
+  background: var(--rust);
+  border-radius: 44px;
+  border: 4px solid var(--bg-deep);
+  box-shadow: 0 0 0 2px rgba(206,173,110,0.2), 0 20px 56px rgba(0,0,0,0.45);
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  cursor: pointer; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s, box-shadow 0.1s;
+  position: relative;
+}
+.big-tap-btn:active { transform: scale(0.92); }
+.big-tap-btn.pressed { transform: scale(0.92); }
+.big-tap-btn.complete { transform: scale(1.07); box-shadow: 0 0 0 3px rgba(206,173,110,0.5), 0 28px 64px rgba(0,0,0,0.5); }
+.btn-emoji { font-size: 3.8rem; line-height: 1; margin-bottom: 0.3rem; transition: transform 0.15s; filter: drop-shadow(0 2px 6px rgba(46,26,14,0.6)); }
+.btn-label { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--type); font-weight: 500; }
+.btn-avoided { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 600; color: var(--amber); margin-top: 0.1rem; min-height: 2rem; }
+
+.tap-dots { display: flex; gap: 5px; margin-top: 1rem; }
+.t-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,230,167,0.15); transition: all 0.15s; }
+.t-dot.lit { background: var(--type); transform: scale(1.25); }
+.t-dot.done { background: var(--btn); }
+
+.ripple { position: absolute; inset: -24px; border-radius: 50%; border: 2px solid rgba(206,173,110,0.35); opacity: 0; pointer-events: none; }
+.ripple.go { animation: ripp 0.7s ease-out forwards; }
+.ripple.go2 { animation: ripp 0.7s ease-out 0.15s forwards; }
+@keyframes ripp { 0%{transform:scale(0.65);opacity:0.8} 100%{transform:scale(1.6);opacity:0} }
+
+.stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 1.25rem; }
+.stat-card { background: var(--bg-mid); border: 1px solid rgba(255,230,167,0.08); border-radius: 16px; padding: 1rem; }
+.stat-card-label { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--type-faint); margin-bottom: 0.3rem; }
+.stat-card-val { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 400; color: var(--type); line-height: 1; }
+.stat-card-unit { font-size: 0.78rem; color: var(--type-dim); margin-top: 0.15rem; }
+
+.milestone-strip { display: flex; gap: 0.6rem; overflow-x: auto; padding-bottom: 0.25rem; }
+.milestone-strip::-webkit-scrollbar { display: none; }
+.ms-badge {
+  flex-shrink: 0;
+  background: rgba(255,230,167,0.04);
+  border: 1px solid rgba(206,173,110,0.15);
+  border-radius: 100px; padding: 0.4rem 1rem;
+  font-size: 0.8rem; color: var(--type-faint);
+  white-space: nowrap; transition: all 0.3s;
+}
+.ms-badge.hit { background: rgba(206,173,110,0.15); color: var(--type); border-color: var(--btn); }
+
+/* ── PROGRESS TAB ── */
+.prog-section { margin-bottom: 1.5rem; }
+.prog-section-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 400; color: var(--type); margin-bottom: 0.85rem; }
+
+.streak-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 1.5rem; }
+.streak-card { background: var(--bg-mid); border: 1px solid rgba(255,230,167,0.08); border-radius: 18px; padding: 1.25rem; text-align: center; }
+.streak-card-num { font-family: 'Cormorant Garamond', serif; font-size: 3rem; font-weight: 300; color: var(--type); line-height: 1; }
+.streak-card-label { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--type-faint); margin-top: 0.3rem; }
+.streak-card-emoji { font-size: 1.5rem; margin-bottom: 0.25rem; }
+
+.graph-card { background: var(--bg-mid); border: 1px solid rgba(255,230,167,0.08); border-radius: 18px; padding: 1.25rem; margin-bottom: 1.5rem; }
+.graph-title { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--type-faint); margin-bottom: 1rem; }
+.bar-graph { display: flex; align-items: flex-end; gap: 6px; height: 100px; }
+.bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+.bar { width: 100%; background: rgba(206,173,110,0.25); border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.6s ease; position: relative; }
+.bar.today { background: var(--btn); }
+.bar-day { font-size: 0.65rem; color: var(--type-faint); letter-spacing: 0.05em; }
+.bar-val { font-size: 0.65rem; color: var(--type-dim); }
+
+.milestones-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
+.ms-card { background: var(--bg-mid); border: 1px solid rgba(255,230,167,0.08); border-radius: 14px; padding: 1rem; text-align: center; transition: all 0.3s; }
+.ms-card.hit { border-color: var(--btn); background: rgba(206,173,110,0.08); }
+.ms-card-emoji { font-size: 1.6rem; margin-bottom: 0.4rem; filter: grayscale(1); opacity: 0.4; transition: all 0.3s; }
+.ms-card.hit .ms-card-emoji { filter: none; opacity: 1; }
+.ms-card-val { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: var(--type-faint); }
+.ms-card.hit .ms-card-val { color: var(--btn); }
+.ms-card-label { font-size: 0.65rem; color: var(--type-faint); margin-top: 2px; }
+
+/* ── SETTINGS TAB ── */
+.settings-section { margin-bottom: 1.75rem; }
+.settings-section-label { font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--btn); margin-bottom: 0.75rem; }
+.settings-row {
+  background: var(--bg-mid); border: 1px solid rgba(255,230,167,0.08);
+  border-radius: 14px; padding: 1rem 1.25rem;
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 0.5rem;
+}
+.settings-row-label { font-size: 0.88rem; color: var(--type-dim); }
+.settings-row-val { font-size: 0.88rem; color: var(--type); font-weight: 500; }
+.settings-input {
+  background: transparent; border: none; outline: none;
+  font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+  color: var(--type); font-weight: 500; text-align: right;
+  width: 80px;
+}
+.settings-btn {
+  width: 100%; background: transparent;
+  color: var(--type); border: 1px solid rgba(255,230,167,0.2);
+  padding: 0.85rem; border-radius: 14px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+  cursor: pointer; transition: all 0.2s; margin-bottom: 0.5rem;
+}
+.settings-btn:hover { border-color: var(--type); }
+.settings-btn.danger { color: rgba(255,100,80,0.7); border-color: rgba(255,100,80,0.2); }
+.settings-btn.danger:hover { color: rgba(255,100,80,1); border-color: rgba(255,100,80,0.5); }
+
+.about-card { background: var(--bg-mid); border: 1px solid rgba(255,230,167,0.08); border-radius: 18px; padding: 1.5rem; text-align: center; }
+.about-logo { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 600; color: var(--type); margin-bottom: 0.25rem; }
+.about-logo span { color: var(--btn); }
+.about-ver { font-size: 0.78rem; color: var(--type-faint); margin-bottom: 0.75rem; }
+.about-text { font-size: 0.82rem; color: var(--type-dim); line-height: 1.6; font-weight: 300; }
+
+/* ── CELEBRATION OVERLAY ── */
+#celebOverlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(46,26,14,0.92);
+  display: none; flex-direction: column;
+  justify-content: center; align-items: center;
+  text-align: center; padding: 2rem;
+}
+#celebOverlay.show { display: flex; }
+.celeb-emoji { font-size: 5rem; margin-bottom: 1rem; animation: bounce 0.5s ease infinite alternate; }
+@keyframes bounce { from{transform:translateY(0)} to{transform:translateY(-12px)} }
+.celeb-title { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-weight: 300; color: var(--type); margin-bottom: 0.5rem; }
+.celeb-sub { font-size: 1rem; color: var(--type-dim); margin-bottom: 2rem; font-weight: 300; }
+.celeb-btn { background: transparent; color: var(--type); border: 1.5px solid var(--type); padding: 0.9rem 2.5rem; border-radius: 100px; font-family: 'DM Sans', sans-serif; font-size: 1rem; cursor: pointer; transition: all 0.2s; }
+.celeb-btn:hover { background: var(--type); color: var(--bg-deep); }
+
+@keyframes fadeIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+.fade-in { animation: fadeIn 0.4s ease both; }
+</style>
+<link rel="manifest" href="/manifest.json">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js');
+  }
+</script>
+</head>
+<body>
+
+<!-- ONBOARDING -->
+<div class="screen active" id="onboarding">
+  <div class="ob-wrap">
+    <div class="ob-logo">Puff<span>Tap</span></div>
+    <div class="ob-progress">
+      <div class="ob-dot active" id="obp0"></div>
+      <div class="ob-dot" id="obp1"></div>
+      <div class="ob-dot" id="obp2"></div>
+      <div class="ob-dot" id="obp3"></div>
+      <div class="ob-dot" id="obp4"></div>
+    </div>
+
+    <!-- Step 0: Name -->
+    <div class="ob-step active" id="obs0">
+      <div class="ob-q">What do we<br><em>call you?</em></div>
+      <div class="ob-sub">No judgement. Just here to help.</div>
+      <input class="ob-input" id="inputName" type="text" placeholder="Your first name" autocomplete="given-name">
+      <button class="ob-btn" onclick="obNext(0)">Continue</button>
+    </div>
+
+    <!-- Step 1: Poison -->
+    <div class="ob-step" id="obs1">
+      <div class="ob-q">What are you<br><em>quitting?</em></div>
+      <div class="ob-sub">We'll tailor the experience to your habit.</div>
+      <div class="ob-options">
+        <div class="ob-option" onclick="selectPoison('vape',this)">
+          <span class="opt-emoji">💨</span>
+          <div><span class="opt-label">Vaping</span><span class="opt-sub">Disposables, pods, mods</span></div>
+        </div>
+        <div class="ob-option" onclick="selectPoison('smoke',this)">
+          <span class="opt-emoji">🚬</span>
+          <div><span class="opt-label">Smoking</span><span class="opt-sub">Cigarettes, rollies</span></div>
+        </div>
+        <div class="ob-option" onclick="selectPoison('both',this)">
+          <span class="opt-emoji">🤷</span>
+          <div><span class="opt-label">Both</span><span class="opt-sub">Whichever is closest</span></div>
+        </div>
+      </div>
+      <button class="ob-btn" onclick="obNext(1)">Continue</button>
+    </div>
+
+    <!-- Step 2: Cost -->
+    <div class="ob-step" id="obs2">
+      <div class="ob-q" id="obs2q">How much does<br><em>each device cost?</em></div>
+      <div class="ob-sub" id="obs2sub">We use this to calculate your savings.</div>
+      <div class="ob-label" id="obs2label">Price per device ($)</div>
+      <input class="ob-input" id="inputCost" type="number" placeholder="e.g. 18.00" min="0" step="0.01">
+      <button class="ob-btn" onclick="obNext(2)">Continue</button>
+    </div>
+
+    <!-- Step 3: Puffs per device -->
+    <div class="ob-step" id="obs3">
+      <div class="ob-q" id="obs3q">Puffs per<br><em>device?</em></div>
+      <div class="ob-sub" id="obs3sub">Check the label or take a guess. Around 400 is typical for a disposable vape.</div>
+      <input class="ob-input" id="inputPuffs" type="number" placeholder="e.g. 400" min="1">
+      <button class="ob-btn" onclick="obNext(3)">Continue</button>
+    </div>
+
+    <!-- Step 4: How many per week -->
+    <div class="ob-step" id="obs4">
+      <div class="ob-q">How many per<br><em>week?</em></div>
+      <div class="ob-sub" id="obs4sub">Be honest. This is just for your savings estimate.</div>
+      <input class="ob-input" id="inputPerWeek" type="number" placeholder="e.g. 2" min="1">
+      <button class="ob-btn" onclick="obFinish()">Let's go 🤘</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="screen" id="app">
+  <!-- Header -->
+  <div class="app-header">
+    <div class="app-header-row">
+      <div>
+        <div class="app-greeting" id="appGreeting">Good morning</div>
+        <div class="app-name" id="appName">Loading...</div>
+      </div>
+      <div class="app-logo">Puff<span>Tap</span></div>
+    </div>
+  </div>
+
+  <!-- Tab content -->
+  <div class="tab-content">
+
+    <!-- HOME -->
+    <div class="tab-pane active" id="tab-home">
+      <div class="savings-hero fade-in">
+        <div class="savings-hero-label">Total saved</div>
+        <div class="savings-hero-amount"><span>$</span><span id="totalSaved">0.00</span></div>
+        <div class="savings-hero-sub" id="savingsRate">calculating...</div>
+      </div>
+
+      <div class="tap-section">
+        <div class="tap-motivator" id="tapMotivator">Every tap is a win.</div>
+        <div class="big-tap-btn" id="bigTapBtn" onclick="handleAppTap()">
+          <div class="ripple" id="ar1"></div>
+          <div class="ripple" id="ar2"></div>
+          <div class="btn-emoji" id="btnEmoji">✊</div>
+          <div class="btn-label" id="btnLabel">Tap instead of puffing</div>
+          <div class="btn-avoided" id="btnAvoided">0 puffs avoided</div>
+        </div>
+        <div class="tap-dots" id="tapDots"></div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-card-label">Today</div>
+          <div class="stat-card-val" id="statToday">0</div>
+          <div class="stat-card-unit" id="statTodayUnit">puffs avoided</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-label">Streak</div>
+          <div class="stat-card-val" id="statStreak">1</div>
+          <div class="stat-card-unit">days strong</div>
+        </div>
+      </div>
+
+      <div class="milestone-strip" id="homeMs"></div>
+    </div>
+
+    <!-- PROGRESS -->
+    <div class="tab-pane" id="tab-progress">
+      <div class="streak-cards">
+        <div class="streak-card">
+          <div class="streak-card-emoji">🔥</div>
+          <div class="streak-card-num" id="progStreak">1</div>
+          <div class="streak-card-label">Day streak</div>
+        </div>
+        <div class="streak-card">
+          <div class="streak-card-emoji">⏱️</div>
+          <div class="streak-card-num" id="progSessions">0</div>
+          <div class="streak-card-label">Sessions today</div>
+        </div>
+      </div>
+
+      <div class="graph-card">
+        <div class="graph-title">Puffs avoided this week</div>
+        <div class="bar-graph" id="barGraph"></div>
+      </div>
+
+      <div class="prog-section">
+        <div class="prog-section-title">Milestones</div>
+        <div class="milestones-grid" id="msGrid"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="tab-pane" id="tab-settings">
+      <div class="settings-section">
+        <div class="settings-section-label">Your habit</div>
+        <div class="settings-row">
+          <span class="settings-row-label">Name</span>
+          <input class="settings-input" id="setName" type="text">
+        </div>
+        <div class="settings-row">
+          <span class="settings-row-label" id="setCostLabel">Cost per device</span>
+          <span>$<input class="settings-input" id="setCost" type="number" step="0.01" style="width:60px"></span>
+        </div>
+        <div class="settings-row">
+          <span class="settings-row-label" id="setPuffsLabel">Puffs per device</span>
+          <input class="settings-input" id="setPuffs" type="number">
+        </div>
+        <div class="settings-row">
+          <span class="settings-row-label" id="setPerWeekLabel">Devices per week</span>
+          <input class="settings-input" id="setPerWeek" type="number">
+        </div>
+        <div class="settings-row">
+          <span class="settings-row-label">Quitting</span>
+          <span class="settings-row-val" id="setPoison">Vaping</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-label">Actions</div>
+        <button class="settings-btn" onclick="saveSettings()">Save changes</button>
+        <button class="settings-btn danger" onclick="resetApp()">Reset all data</button>
+      </div>
+
+      <div class="about-card">
+        <div class="about-logo">Puff<span>Tap</span></div>
+        <div class="about-ver">Version 1.0 — Simulation mode</div>
+        <div class="about-text">PuffTap replaces the puffing ritual with a tap, rewiring your habit loop one session at a time. Real savings banking integration coming soon.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tbHome" onclick="switchTab('home')">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+        <path d="M9 21V12h6v9"/>
+      </svg>
+      <span>Home</span>
+    </button>
+    <button class="tab-btn" id="tbProgress" onclick="switchTab('progress')">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <path d="M7 16l3-4 3 2.5 3-5.5"/>
+      </svg>
+      <span>Progress</span>
+    </button>
+    <button class="tab-btn" id="tbSettings" onclick="switchTab('settings')">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+      </svg>
+      <span>Settings</span>
+    </button>
+  </div>
+</div>
+
+<!-- CELEBRATION OVERLAY -->
+<div id="celebOverlay">
+  <div class="celeb-emoji" id="celebEmoji">🎉</div>
+  <div class="celeb-title" id="celebTitle">Milestone hit!</div>
+  <div class="celeb-sub" id="celebSub">Keep going.</div>
+  <button class="celeb-btn" onclick="closeOverlay()">Keep going 🤘</button>
+</div>
+
+<script>
+// ── STATE ──
+let state = {
+  name: '', poison: 'vape',
+  costPerDevice: 18, puffsPerDevice: 400, devicesPerWeek: 2,
+  totalPuffsAvoided: 0, todayPuffs: 0,
+  sessions: 0, streak: 1,
+  weekData: [0,0,0,0,0,0,0],
+  milestonesSeen: [],
+  startedAt: Date.now()
+};
+
+// ── POISON CONFIG ──
+const poisonCfg = {
+  vape: { taps: 3, unit: 'puff', units: 'puffs', deviceLabel: 'device', costLabel: 'Cost per device', puffsLabel: 'Puffs per device', perWeekLabel: 'Devices per week', emojis: ['✊','☝️','✌️','🤘'], ob2q: 'How much does each device cost?', ob3q: 'Puffs per device?', ob3sub: 'Check the label or take a guess. Around 400 is typical for a disposable vape.' },
+  smoke: { taps: 10, unit: 'drag', units: 'drags', deviceLabel: 'pack', costLabel: 'Cost per pack', puffsLabel: 'Cigarettes per pack', perWeekLabel: 'Packs per week', emojis: ['✊','☝️','✌️','🤟','🖖','🖐️','🤙','👆','🤞','👌','🤘'], ob2q: 'How much does a pack cost?', ob3q: 'Cigarettes per pack?', ob3sub: 'Standard packs are 20. Each ciggie is roughly 10 drags.' },
+  both: { taps: 3, unit: 'hit', units: 'hits', deviceLabel: 'device/pack', costLabel: 'Avg cost per item', puffsLabel: 'Uses per item', perWeekLabel: 'Items per week', emojis: ['✊','☝️','✌️','🤘'], ob2q: 'Average cost per vape or pack?', ob3q: 'Uses per item?', ob3sub: 'Average across what you use. A rough number is fine.' }
+};
+
+let tapStep = 0, resetTimer = null;
+const milestones = [
+  { val: 5, emoji: '🌱', label: '$5 saved' },
+  { val: 10, emoji: '🎯', label: '$10 saved' },
+  { val: 25, emoji: '⭐', label: '$25 saved' },
+  { val: 50, emoji: '🔥', label: '$50 saved' },
+  { val: 100, emoji: '🏆', label: '$100 saved' },
+  { val: 250, emoji: '💎', label: '$250 saved' },
+];
+
+// ── ONBOARDING ──
+let obPoison = 'vape';
+function selectPoison(p, el) {
+  obPoison = p;
+  document.querySelectorAll('.ob-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function obNext(step) {
+  if (step === 0) {
+    const n = document.getElementById('inputName').value.trim();
+    if (!n) { document.getElementById('inputName').focus(); return; }
+    state.name = n;
+  }
+  if (step === 1) {
+    state.poison = obPoison;
+    const cfg = poisonCfg[obPoison];
+    document.getElementById('obs2q').innerHTML = cfg.ob2q.replace(/(.+cost\?)/, (m) => m.replace('cost?','<br><em>cost?</em>'));
+    document.getElementById('obs2label').textContent = cfg.costLabel + ' ($)';
+    document.getElementById('obs3q').innerHTML = cfg.ob3q.replace(/\?/, '<br><em>' + cfg.ob3q.split(' ').pop() + '</em>').replace(cfg.ob3q.split(' ').pop() + '<br><em>' + cfg.ob3q.split(' ').pop() + '</em>', cfg.ob3q.split(' ').slice(0,-1).join(' ') + '<br><em>' + cfg.ob3q.split(' ').pop() + '</em>');
+    document.getElementById('obs3sub').textContent = cfg.ob3sub;
+    document.getElementById('obs4sub').textContent = 'Be honest. This is just for your savings estimate.';
+  }
+  if (step === 2) {
+    const v = parseFloat(document.getElementById('inputCost').value);
+    if (!v || v <= 0) { document.getElementById('inputCost').focus(); return; }
+    state.costPerDevice = v;
+  }
+  if (step === 3) {
+    const v = parseInt(document.getElementById('inputPuffs').value);
+    if (!v || v <= 0) { document.getElementById('inputPuffs').focus(); return; }
+    state.puffsPerDevice = v;
+  }
+  document.getElementById('obs' + step).classList.remove('active');
+  document.getElementById('obs' + (step+1)).classList.add('active');
+  for (let i = 0; i <= 4; i++) {
+    const d = document.getElementById('obp' + i);
+    if (i < step+1) { d.classList.add('done'); d.classList.remove('active'); }
+    else if (i === step+1) { d.classList.add('active'); d.classList.remove('done'); }
+    else { d.classList.remove('active','done'); }
+  }
+}
+
+function obFinish() {
+  const v = parseInt(document.getElementById('inputPerWeek').value);
+  if (!v || v <= 0) { document.getElementById('inputPerWeek').focus(); return; }
+  state.devicesPerWeek = v;
+  state.startedAt = Date.now();
+  initApp();
+  document.getElementById('onboarding').classList.remove('active');
+  document.getElementById('app').classList.add('active');
+}
+
+// ── APP INIT ──
+function initApp() {
+  const cfg = poisonCfg[state.poison];
+  const costPerPuff = state.costPerDevice / state.puffsPerDevice;
+  const puffsPerWeek = state.puffsPerDevice * state.devicesPerWeek;
+  const savingsPerWeek = (costPerPuff * puffsPerWeek).toFixed(2);
+
+  // Header
+  const hr = new Date().getHours();
+  const greet = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('appGreeting').textContent = greet;
+  document.getElementById('appName').textContent = state.name + '.';
+
+  // Savings rate
+  document.getElementById('savingsRate').textContent = 'Up to $' + savingsPerWeek + ' saved this week if you tap every craving';
+
+  // Motivators
+  const motivators = [
+    'Every tap is a win.',
+    'The urge will pass. It always does.',
+    'Your future self is watching.',
+    'One tap at a time.',
+    'You chose this. Keep going.',
+    'The ritual is the reward now.'
+  ];
+  document.getElementById('tapMotivator').textContent = motivators[Math.floor(Math.random() * motivators.length)];
+
+  // Tap button label
+  document.getElementById('btnLabel').textContent = 'Tap instead of puffing';
+  document.getElementById('btnAvoided').textContent = '0 ' + cfg.units + ' avoided';
+
+  // Build dots
+  buildDots();
+
+  // Settings panel
+  document.getElementById('setName').value = state.name;
+  document.getElementById('setCost').value = state.costPerDevice;
+  document.getElementById('setPuffs').value = state.puffsPerDevice;
+  document.getElementById('setPerWeek').value = state.devicesPerWeek;
+  document.getElementById('setPoison').textContent = state.poison === 'vape' ? 'Vaping' : state.poison === 'smoke' ? 'Smoking' : 'Both';
+  document.getElementById('setCostLabel').textContent = cfg.costLabel;
+  document.getElementById('setPuffsLabel').textContent = cfg.puffsLabel;
+  document.getElementById('setPerWeekLabel').textContent = cfg.perWeekLabel;
+
+  // Build graph
+  buildGraph();
+
+  // Build milestones
+  buildMilestones();
+
+  // Start live savings ticker
+  startSavingsTicker();
+}
+
+function buildDots() {
+  const cfg = poisonCfg[state.poison];
+  const container = document.getElementById('tapDots');
+  container.innerHTML = '';
+  for (let i = 0; i < cfg.taps; i++) {
+    const d = document.createElement('div');
+    d.className = 'tap-dot';
+    d.id = 'td' + i;
+    container.appendChild(d);
+  }
+}
+
+function buildGraph() {
+  const days = ['M','T','W','T','F','S','S'];
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  const graph = document.getElementById('barGraph');
+  graph.innerHTML = '';
+  const maxVal = Math.max(...state.weekData, 1);
+  days.forEach((d, i) => {
+    const w = document.createElement('div');
+    w.className = 'bar-wrap';
+    const barH = Math.round((state.weekData[i] / maxVal) * 80) + 4;
+    w.innerHTML = '<div class="bar-val">' + (state.weekData[i] || '') + '</div>' +
+      '<div class="bar' + (i === todayIdx ? ' today' : '') + '" style="height:' + barH + 'px"></div>' +
+      '<div class="bar-day">' + d + '</div>';
+    graph.appendChild(w);
+  });
+}
+
+function buildMilestones() {
+  const totalSaved = parseFloat(document.getElementById('totalSaved').textContent) || 0;
+  const grid = document.getElementById('msGrid');
+  const strip = document.getElementById('homeMs');
+  grid.innerHTML = '';
+  strip.innerHTML = '';
+  milestones.forEach(m => {
+    const hit = totalSaved >= m.val || state.milestonesSeen.includes(m.val);
+    const card = document.createElement('div');
+    card.className = 'ms-card' + (hit ? ' hit' : '');
+    card.innerHTML = '<div class="ms-card-emoji">' + m.emoji + '</div><div class="ms-card-val">' + m.label + '</div>';
+    grid.appendChild(card);
+    const badge = document.createElement('div');
+    badge.className = 'ms-badge' + (hit ? ' hit' : '');
+    badge.textContent = m.emoji + ' ' + m.label;
+    strip.appendChild(badge);
+  });
+}
+
+// ── SAVINGS TICKER ──
+function startSavingsTicker() {
+  const costPerPuff = state.costPerDevice / state.puffsPerDevice;
+  setInterval(() => {
+    const avoided = state.totalPuffsAvoided;
+    const saved = (avoided * costPerPuff).toFixed(2);
+    document.getElementById('totalSaved').textContent = saved;
+    checkMilestones(parseFloat(saved));
+    buildMilestones();
+  }, 500);
+}
+
+// ── TAP MECHANIC ──
+function handleAppTap() {
+  clearTimeout(resetTimer);
+  const cfg = poisonCfg[state.poison];
+  tapStep++;
+
+  const btn = document.getElementById('bigTapBtn');
+  const emoji = document.getElementById('btnEmoji');
+  btn.classList.add('pressed');
+  setTimeout(() => btn.classList.remove('pressed'), 120);
+
+  emoji.style.transform = 'scale(1.3)';
+  setTimeout(() => emoji.style.transform = 'scale(1)', 180);
+  emoji.textContent = cfg.emojis[tapStep];
+
+  for (let i = 0; i < cfg.taps; i++) {
+    const d = document.getElementById('td' + i);
+    if (d) d.classList.toggle('lit', i < tapStep);
+  }
+
+  if (tapStep === cfg.taps) {
+    // Completed a full session
+    state.totalPuffsAvoided++;
+    state.todayPuffs++;
+    state.sessions++;
+    const todayIdx = (new Date().getDay() + 6) % 7;
+    state.weekData[todayIdx]++;
+
+    btn.classList.add('complete');
+    const r1 = document.getElementById('ar1'), r2 = document.getElementById('ar2');
+    r1.classList.remove('go'); r2.classList.remove('go2');
+    void r1.offsetWidth;
+    r1.classList.add('go'); r2.classList.add('go2');
+
+    const cfg2 = poisonCfg[state.poison];
+    const avoided = document.getElementById('btnAvoided');
+    avoided.textContent = state.totalPuffsAvoided + ' ' + cfg2.units + ' avoided';
+    avoided.style.transform = 'scale(1.2)';
+    setTimeout(() => avoided.style.transform = 'scale(1)', 220);
+
+    document.getElementById('statToday').textContent = state.todayPuffs;
+    document.getElementById('statTodayUnit').textContent = cfg2.units + ' avoided';
+    document.getElementById('statStreak').textContent = state.streak;
+    document.getElementById('progStreak').textContent = state.streak;
+    document.getElementById('progSessions').textContent = state.sessions;
+    buildGraph();
+
+    // Rotate motivators
+    const motivators = ['Every tap is a win.', 'The urge will pass. It always does.', 'Your future self is watching.', 'One tap at a time.', 'You chose this. Keep going.', 'The ritual is the reward now.', 'That one did not count. This one does.', 'Streak intact. Keep it that way.'];
+    document.getElementById('tapMotivator').textContent = motivators[Math.floor(Math.random() * motivators.length)];
+
+    setTimeout(() => {
+      tapStep = 0;
+      emoji.textContent = cfg.emojis[0];
+      btn.classList.remove('complete');
+      for (let i = 0; i < cfg.taps; i++) {
+        const d = document.getElementById('td' + i);
+        if (d) d.classList.remove('lit', 'done');
+      }
+    }, 1500);
+  } else {
+    resetTimer = setTimeout(() => {
+      tapStep = 0;
+      emoji.textContent = cfg.emojis[0];
+      for (let i = 0; i < cfg.taps; i++) {
+        const d = document.getElementById('td' + i);
+        if (d) d.classList.remove('lit');
+      }
+    }, 4000);
+  }
+}
+
+// ── MILESTONES ──
+function checkMilestones(saved) {
+  milestones.forEach(m => {
+    if (saved >= m.val && !state.milestonesSeen.includes(m.val)) {
+      state.milestonesSeen.push(m.val);
+      showCelebration(m);
+    }
+  });
+}
+
+function showCelebration(m) {
+  document.getElementById('celebEmoji').textContent = m.emoji;
+  document.getElementById('celebTitle').textContent = m.label + '!';
+  document.getElementById('celebSub').textContent = 'That is real money back in your pocket. Keep tapping.';
+  document.getElementById('celebOverlay').classList.add('show');
+}
+
+function closeOverlay() {
+  document.getElementById('celebOverlay').classList.remove('show');
+}
+
+// ── TABS ──
+function switchTab(tab) {
+  ['home','progress','settings'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+    document.getElementById('tb' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
+  });
+}
+
+// ── SETTINGS ──
+function saveSettings() {
+  state.name = document.getElementById('setName').value || state.name;
+  state.costPerDevice = parseFloat(document.getElementById('setCost').value) || state.costPerDevice;
+  state.puffsPerDevice = parseInt(document.getElementById('setPuffs').value) || state.puffsPerDevice;
+  state.devicesPerWeek = parseInt(document.getElementById('setPerWeek').value) || state.devicesPerWeek;
+  document.getElementById('appName').textContent = state.name + '.';
+  const cfg = poisonCfg[state.poison];
+  const costPerPuff = state.costPerDevice / state.puffsPerDevice;
+  const puffsPerWeek = state.puffsPerDevice * state.devicesPerWeek;
+  document.getElementById('savingsRate').textContent = 'Up to $' + (costPerPuff * puffsPerWeek).toFixed(2) + ' saved this week if you tap every craving';
+  alert('Saved!');
+}
+
+function resetApp() {
+  if (confirm('Reset all your data? This cannot be undone.')) {
+    state.totalPuffsAvoided = 0; state.todayPuffs = 0;
+    state.sessions = 0; state.weekData = [0,0,0,0,0,0,0];
+    state.milestonesSeen = [];
+    document.getElementById('totalSaved').textContent = '0.00';
+    document.getElementById('btnAvoided').textContent = '0 ' + poisonCfg[state.poison].units + ' avoided';
+    document.getElementById('statToday').textContent = '0';
+    document.getElementById('statStreak').textContent = '1';
+    buildGraph(); buildMilestones();
+  }
+}
+</script>
+</body>
+</html>
