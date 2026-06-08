@@ -508,8 +508,8 @@ html, body {
         </div>
         <button class="session-exit-btn" id="sessionExitBtn" type="button" aria-label="Exit session">×</button>
         <div class="tap-section-wrap">
-          <svg id="arcSvg" style="position:absolute; top:-12px; left:-12px; right:-12px; bottom:-12px; width:calc(100% + 24px); height:calc(100% + 24px); pointer-events:none; z-index:10;" viewBox="0 0 224 224" aria-hidden="true">
-            <circle id="arcCircle" cx="112" cy="112" r="108" fill="none" stroke="#CEAD6E" stroke-width="3" stroke-linecap="round" transform="rotate(-90 112 112)"/>
+          <svg id="arcSvg" style="position:absolute; top:-20px; left:-20px; pointer-events:none; z-index:10; width:240px; height:240px;" viewBox="0 0 240 240" aria-hidden="true">
+            <circle id="arcCircle" cx="120" cy="120" r="116" fill="none" stroke="#CEAD6E" stroke-width="3" stroke-linecap="round" transform="rotate(-90 120 120)"/>
           </svg>
           <div class="big-tap-btn" id="bigTapBtn">
             <div class="ripple" id="ar1"></div>
@@ -962,7 +962,7 @@ window.addEventListener('online', syncQueue);
 // ── WAVE SESSION ENGINE ──
 const SESSION_MS = 90000;
 const PREVIEW_MS = 2000;
-const ARC_CIRCUMFERENCE = 2 * Math.PI * 108;
+const ARC_CIRCUMFERENCE = 2 * Math.PI * 116;
 const ALL_GESTURES = ['tap', 'double-tap', 'long-press', 'swipe-left', 'swipe-right', 'swipe-up', 'swipe-down', 'pinch', 'spread', 'shake'];
 const TAP_ONLY_GESTURES = ['tap', 'double-tap', 'long-press'];
 
@@ -1280,8 +1280,8 @@ function scheduleGestureCycle() {
     fadeInstruction();
     wave.gestureIndex++;
     if (wave.gestureIndex >= wave.sequence.length) wave.gestureIndex = 0;
-    if (wave.status === 'active' && wave.elapsed < SESSION_MS) {
-      const t = setTimeout(scheduleGestureCycle, gestureSpeed);
+    if (wave.status === 'active' && (performance.now() - wave.sessionStart) < SESSION_MS) {
+      const t = setTimeout(scheduleGestureCycle, 50);
       wave.timers.push(t);
     }
   }, PREVIEW_MS + gestureSpeed);
