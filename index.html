@@ -1212,7 +1212,6 @@ function resetWaveIdle() {
   wave.elapsed = 0;
   wave.pausedElapsed = 0;
   wave.startTime = 0;
-  wave.pendingMilestone = null;
   document.getElementById('bigTapBtn').classList.remove('breathing', 'complete');
   document.getElementById('bigTapBtn').style.transform = '';
   document.getElementById('sessionExitBtn').classList.remove('visible');
@@ -1316,17 +1315,10 @@ function completeWaveSession() {
   clearWaveTimers();
   stopShakeListener();
   wave.status = 'complete';
+  document.getElementById('sessionExitBtn').classList.remove('visible');
   document.getElementById('bigTapBtn').classList.add('complete');
   document.getElementById('btnEmoji').textContent = '🤘';
-  document.getElementById('sessionExitBtn').classList.remove('visible');
   vibrate([60, 40, 60, 40, 100]);
-
-  state.sessions++;
-  document.getElementById('progSessions').textContent = state.sessions;
-
-  queueDataUpdate({ type: 'session_complete', sessions: 1 });
-  saveStateToStorage();
-  if (navigator.onLine) syncQueue();
 
   const waveOverlay = document.getElementById('waveOverlay');
   waveOverlay.style.display = 'flex';
@@ -1335,19 +1327,29 @@ function completeWaveSession() {
     const avg = wave.responseTimes.reduce((a, b) => a + b, 0) / wave.responseTimes.length;
     document.getElementById('waveSpeed').textContent = getSpeedMessage(avg);
   }
+
+  state.sessions++;
+  document.getElementById('progSessions').textContent = state.sessions;
+
+  queueDataUpdate({ type: 'session_complete', sessions: 1 });
+  saveStateToStorage();
+  if (navigator.onLine) syncQueue();
+}
+
+function showAbandonOverlay(elapsed) {
+  stopShakeListener();
+  wave.pausedElapsed = Date.now() - wave.startTime;
+  vibrate(20);
+  document.getElementById('abandonTitle').textContent = 'You made it ' + elapsed + ' seconds';
+  document.getElementById('abandonOverlay').classList.add('show');
 }
 
 function abandonWaveSession() {
   if (wave.status !== 'active') return;
-  console.log('Session abandoned at elapsed:', wave.elapsed, '| actual time since start:', Date.now() - wave.startTime);
   clearWaveTimers();
-  stopShakeListener();
-  wave.status = 'abandoned';
-  wave.pausedElapsed = Date.now() - wave.startTime;
-  vibrate(20);
+  wave.status = 'paused';
   const elapsed = Math.round((Date.now() - wave.startTime) / 1000);
-  document.getElementById('abandonTitle').textContent = 'You made it ' + elapsed + ' seconds';
-  document.getElementById('abandonOverlay').classList.add('show');
+  showAbandonOverlay(elapsed);
 }
 
 function resumeWaveSession() {
@@ -1610,7 +1612,13 @@ function initWaveEngine() {
   btn.addEventListener('mousedown', onMouseDown);
   window.addEventListener('mousemove', onMouseMove);
   window.addEventListener('mouseup', onMouseUp);
-  document.getElementById('sessionExitBtn').addEventListener('click', abandonWaveSession);
+  document.getElementById('sessionExitBtn').addEventListener('click', () => {
+    if (wave.status !== 'active') return;
+    clearWaveTimers();
+    wave.status = 'paused';
+    const elapsed = Math.round((Date.now() - wave.startTime) / 1000);
+    showAbandonOverlay(elapsed);
+  });
   window.addEventListener('popstate', () => {
     if (wave.status === 'active') abandonWaveSession();
   });
@@ -1640,9 +1648,10 @@ function showCelebration(m) {
 
 function closeWaveOverlay() {
   document.getElementById('waveOverlay').style.display = 'none';
-  const m = wave.pendingMilestone;
   resetWaveIdle();
-  if (m) {
+  if (wave.pendingMilestone) {
+    const m = wave.pendingMilestone;
+    wave.pendingMilestone = null;
     setTimeout(() => showCelebration(m), 400);
   }
 }
