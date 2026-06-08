@@ -1341,8 +1341,6 @@ function completeWaveSession() {
     document.getElementById('celebSpeed').textContent = getSpeedMessage(avg);
   }
   document.getElementById('celebOverlay').classList.add('show');
-
-  setTimeout(() => resetWaveIdle(), 3000);
 }
 
 function abandonWaveSession() {
@@ -1513,11 +1511,7 @@ function onTouchEnd(e) {
       gestureState.lastTapTime = 0;
     } else {
       gestureState.lastTapTime = now;
-      setTimeout(() => {
-        if (gestureState.lastTapTime === now) {
-          emitGesture('tap');
-        }
-      }, 300);
+      emitGesture('tap');
     }
   }
 
@@ -1564,9 +1558,7 @@ function onMouseUp(e) {
       gestureState.lastTapTime = 0;
     } else {
       gestureState.lastTapTime = now;
-      setTimeout(() => {
-        if (gestureState.lastTapTime === now) emitGesture('tap');
-      }, 300);
+      emitGesture('tap');
     }
   }
   gestureState.active = false;
@@ -1615,8 +1607,10 @@ function initWaveEngine() {
   if (waveEngineInitialized) return;
   waveEngineInitialized = true;
   const btn = document.getElementById('bigTapBtn');
-  btn.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
-  btn.addEventListener('touchstart', onTouchStart, { passive: false });
+  btn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    onTouchStart(e);
+  }, { passive: false });
   btn.addEventListener('touchmove', onTouchMove, { passive: true });
   btn.addEventListener('touchend', onTouchEnd);
   btn.addEventListener('mousedown', onMouseDown);
@@ -1648,7 +1642,7 @@ function showCelebration(m) {
 
 function closeOverlay() {
   document.getElementById('celebOverlay').classList.remove('show');
-  if (wave.status === 'complete') resetWaveIdle();
+  resetWaveIdle();
 }
 
 // ── TABS ──
