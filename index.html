@@ -658,6 +658,14 @@ html, body {
   </div>
 </div>
 
+<div id="waveOverlay" style="position:fixed;inset:0;z-index:201;background:rgba(46,26,14,0.95);display:none;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:2rem;">
+  <div style="font-size:5rem;margin-bottom:1rem;">🤘</div>
+  <div style="font-family:'Cormorant Garamond',serif;font-size:2.5rem;font-weight:300;color:#FFE6A7;margin-bottom:0.5rem;">You rode the wave.</div>
+  <div style="font-size:1rem;color:rgba(255,230,167,0.55);margin-bottom:0.5rem;">90 seconds. One craving down.</div>
+  <div id="waveSpeed" style="font-size:0.9rem;color:rgba(255,230,167,0.55);margin-bottom:2rem;font-style:italic;"></div>
+  <button onclick="closeWaveOverlay()" style="background:transparent;color:#FFE6A7;border:1.5px solid #FFE6A7;padding:0.9rem 2.5rem;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:1rem;cursor:pointer;">Keep going 🤘</button>
+</div>
+
 <!-- CELEBRATION OVERLAY -->
 <div id="celebOverlay">
   <div class="celeb-emoji" id="celebEmoji">🎉</div>
@@ -1031,6 +1039,7 @@ let wave = {
 
 let tapStep = 0;
 let tapResetTimer = null;
+let arcRafId = null;
 
 let lastMicroRoutines = [];
 
@@ -1167,9 +1176,24 @@ function fadeInstruction() {
   document.getElementById('gestureInstruction').classList.add('fading');
 }
 
-function updateArcProgress() {
-  const progress = Math.min(wave.elapsed / SESSION_MS, 1);
-  document.getElementById('arcCircle').style.strokeDashoffset = ARC_CIRCUMFERENCE * (1 - progress);
+function startArcLoop() {
+  if (arcRafId) cancelAnimationFrame(arcRafId);
+  function arcTick() {
+    if (wave.status !== 'active') {
+      arcRafId = null;
+      return;
+    }
+    const elapsed = performance.now() - wave.sessionStart;
+    const progress = Math.min(elapsed / SESSION_MS, 1);
+    const circle = document.getElementById('arcCircle');
+    if (circle) {
+      circle.style.strokeDashoffset = ARC_CIRCUMFERENCE * (1 - progress);
+    }
+    if (progress < 1) {
+      arcRafId = requestAnimationFrame(arcTick);
+    }
+  }
+  arcRafId = requestAnimationFrame(arcTick);
 }
 
 function resetArc() {
@@ -1219,6 +1243,10 @@ function advanceTapSequence() {
 }
 
 function resetWaveIdle() {
+  if (arcRafId) {
+    cancelAnimationFrame(arcRafId);
+    arcRafId = null;
+  }
   clearWaveTimers();
   stopShakeListener();
   wave.status = 'idle';
@@ -1241,9 +1269,7 @@ function resetWaveIdle() {
 
 function tickWave() {
   if (wave.status !== 'active') return;
-  const now = performance.now();
-  wave.elapsed = now - wave.sessionStart;
-  updateArcProgress();
+  wave.elapsed = performance.now() - wave.sessionStart;
   updateBreathing();
   if (wave.elapsed >= SESSION_MS) {
     completeWaveSession();
@@ -1329,6 +1355,7 @@ function startWaveSession() {
   startShakeListener();
   history.pushState({ wave: true }, '');
   scheduleGestureCycle();
+  startArcLoop();
   wave.rafId = requestAnimationFrame(tickWave);
   console.log('Wave session started, sequence:', wave.sequence);
 }
@@ -1350,15 +1377,13 @@ function completeWaveSession() {
   saveStateToStorage();
   if (navigator.onLine) syncQueue();
 
-  document.getElementById('celebEmoji').textContent = '🤘';
-  document.getElementById('celebTitle').textContent = 'You rode the wave.';
-  document.getElementById('celebSub').textContent = '90 seconds. One craving down.';
-  document.getElementById('celebSpeed').textContent = '';
+  const waveOverlay = document.getElementById('waveOverlay');
+  waveOverlay.style.display = 'flex';
+  document.getElementById('waveSpeed').textContent = '';
   if (wave.responseTimes && wave.responseTimes.length > 0) {
     const avg = wave.responseTimes.reduce((a, b) => a + b, 0) / wave.responseTimes.length;
-    document.getElementById('celebSpeed').textContent = getSpeedMessage(avg);
+    document.getElementById('waveSpeed').textContent = getSpeedMessage(avg);
   }
-  document.getElementById('celebOverlay').classList.add('show');
 }
 
 function abandonWaveSession() {
@@ -1381,6 +1406,7 @@ function resumeWaveSession() {
   wave.sessionStart = performance.now() - wave.pausedElapsed;
   startShakeListener();
   scheduleGestureCycle();
+  startArcLoop();
   wave.rafId = requestAnimationFrame(tickWave);
 }
 
@@ -1656,6 +1682,11 @@ function showCelebration(m) {
   document.getElementById('celebSub').textContent = 'That is real money back in your pocket. Keep tapping.';
   document.getElementById('celebSpeed').textContent = '';
   document.getElementById('celebOverlay').classList.add('show');
+}
+
+function closeWaveOverlay() {
+  document.getElementById('waveOverlay').style.display = 'none';
+  resetWaveIdle();
 }
 
 function closeOverlay() {
