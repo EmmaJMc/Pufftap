@@ -193,13 +193,6 @@ html, body {
   position: relative;
   display: inline-block;
 }
-#arcCircle {
-  fill: none;
-  stroke: #CEAD6E;
-  stroke-width: 3;
-  stroke-linecap: round;
-}
-
 .big-tap-btn {
   width: 200px; height: 200px;
   background: var(--rust);
@@ -508,9 +501,6 @@ html, body {
         </div>
         <button class="session-exit-btn" id="sessionExitBtn" type="button" aria-label="Exit session">×</button>
         <div class="tap-section-wrap">
-          <svg id="arcSvg" style="position:absolute; top:-20px; left:-20px; pointer-events:none; z-index:10; width:240px; height:240px;" viewBox="0 0 240 240" aria-hidden="true">
-            <circle id="arcCircle" cx="120" cy="120" r="116" fill="none" stroke="#CEAD6E" stroke-width="3" stroke-linecap="round" transform="rotate(-90 120 120)"/>
-          </svg>
           <div class="big-tap-btn" id="bigTapBtn">
             <div class="ripple" id="ar1"></div>
             <div class="ripple" id="ar2"></div>
@@ -970,7 +960,6 @@ window.addEventListener('online', syncQueue);
 // ── WAVE SESSION ENGINE ──
 const SESSION_MS = 90000;
 const PREVIEW_MS = 2000;
-const ARC_CIRCUMFERENCE = 2 * Math.PI * 116;
 const ALL_GESTURES = ['tap', 'double-tap', 'long-press', 'swipe-left', 'swipe-right', 'swipe-up', 'swipe-down', 'pinch', 'spread', 'shake'];
 const TAP_ONLY_GESTURES = ['tap', 'double-tap', 'long-press'];
 
@@ -1034,12 +1023,12 @@ let wave = {
   gesturePhaseStart: 0,
   gestureWindowStart: 0,
   responseTimes: [],
-  shakeHandler: null
+  shakeHandler: null,
+  pendingMilestone: null
 };
 
 let tapStep = 0;
 let tapResetTimer = null;
-let arcRafId = null;
 
 let lastMicroRoutines = [];
 
@@ -1176,38 +1165,9 @@ function fadeInstruction() {
   document.getElementById('gestureInstruction').classList.add('fading');
 }
 
-function startArcLoop() {
-  if (arcRafId) cancelAnimationFrame(arcRafId);
-  function arcTick() {
-    if (wave.status !== 'active') {
-      arcRafId = null;
-      return;
-    }
-    const elapsed = performance.now() - wave.sessionStart;
-    const progress = Math.min(elapsed / SESSION_MS, 1);
-    const circle = document.getElementById('arcCircle');
-    if (circle) {
-      circle.style.strokeDashoffset = ARC_CIRCUMFERENCE * (1 - progress);
-    }
-    if (progress < 1) {
-      arcRafId = requestAnimationFrame(arcTick);
-    }
-  }
-  arcRafId = requestAnimationFrame(arcTick);
-}
-
-function resetArc() {
-  const circle = document.getElementById('arcCircle');
-  circle.style.strokeDasharray = ARC_CIRCUMFERENCE;
-  circle.style.strokeDashoffset = ARC_CIRCUMFERENCE;
-}
-
 function updateBreathing() {
   const sine = Math.sin((wave.elapsed / 4000) * Math.PI * 2);
-  const opacity = 0.4 + 0.6 * ((sine + 1) / 2);
   const scale = 1 + 0.03 * ((sine + 1) / 2);
-  const arcSvg = document.getElementById('arcSvg');
-  if (arcSvg) arcSvg.style.opacity = opacity;
   const btn = document.getElementById('bigTapBtn');
   if (btn) btn.style.transform = 'scale(' + scale + ')';
 }
@@ -1243,10 +1203,6 @@ function advanceTapSequence() {
 }
 
 function resetWaveIdle() {
-  if (arcRafId) {
-    cancelAnimationFrame(arcRafId);
-    arcRafId = null;
-  }
   clearWaveTimers();
   stopShakeListener();
   wave.status = 'idle';
@@ -1256,14 +1212,12 @@ function resetWaveIdle() {
   wave.elapsed = 0;
   wave.pausedElapsed = 0;
   wave.startTime = 0;
+  wave.pendingMilestone = null;
   document.getElementById('bigTapBtn').classList.remove('breathing', 'complete');
   document.getElementById('bigTapBtn').style.transform = '';
-  const arcSvg = document.getElementById('arcSvg');
-  if (arcSvg) arcSvg.style.opacity = '';
   document.getElementById('sessionExitBtn').classList.remove('visible');
   document.getElementById('btnLabel').textContent = 'Ride the craving wave';
   resetTapSequence();
-  resetArc();
   setIdleInstruction();
 }
 
@@ -1351,11 +1305,9 @@ function startWaveSession() {
   document.getElementById('bigTapBtn').classList.add('breathing');
   document.getElementById('sessionExitBtn').classList.add('visible');
   document.getElementById('btnLabel').textContent = 'Stay with the wave';
-  resetArc();
   startShakeListener();
   history.pushState({ wave: true }, '');
   scheduleGestureCycle();
-  startArcLoop();
   wave.rafId = requestAnimationFrame(tickWave);
   console.log('Wave session started, sequence:', wave.sequence);
 }
@@ -1364,7 +1316,6 @@ function completeWaveSession() {
   clearWaveTimers();
   stopShakeListener();
   wave.status = 'complete';
-  document.getElementById('arcCircle').style.strokeDashoffset = '0';
   document.getElementById('bigTapBtn').classList.add('complete');
   document.getElementById('btnEmoji').textContent = '🤘';
   document.getElementById('sessionExitBtn').classList.remove('visible');
@@ -1406,7 +1357,6 @@ function resumeWaveSession() {
   wave.sessionStart = performance.now() - wave.pausedElapsed;
   startShakeListener();
   scheduleGestureCycle();
-  startArcLoop();
   wave.rafId = requestAnimationFrame(tickWave);
 }
 
@@ -1671,7 +1621,11 @@ function checkMilestones(saved) {
   milestones.forEach(m => {
     if (saved >= m.val && !state.milestonesSeen.includes(m.val)) {
       state.milestonesSeen.push(m.val);
-      showCelebration(m);
+      if (wave.status === 'active') {
+        wave.pendingMilestone = m;
+      } else {
+        showCelebration(m);
+      }
     }
   });
 }
@@ -1686,7 +1640,11 @@ function showCelebration(m) {
 
 function closeWaveOverlay() {
   document.getElementById('waveOverlay').style.display = 'none';
+  const m = wave.pendingMilestone;
   resetWaveIdle();
+  if (m) {
+    setTimeout(() => showCelebration(m), 400);
+  }
 }
 
 function closeOverlay() {
