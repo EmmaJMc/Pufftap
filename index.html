@@ -189,23 +189,15 @@ html, body {
 @keyframes breathScale { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
 @keyframes breathOpacity { 0%,100%{opacity:0.4} 50%{opacity:1} }
 
-.wave-wrap {
+.tap-section-wrap {
   position: relative;
-  width: 240px; height: 240px;
-  display: flex; align-items: center; justify-content: center;
+  display: inline-block;
 }
-.breath-arc {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  pointer-events: none;
-  animation: breathOpacity 4s ease-in-out infinite;
-}
-.breath-arc circle {
+#arcCircle {
   fill: none;
   stroke: #CEAD6E;
   stroke-width: 3;
   stroke-linecap: round;
-  transition: stroke-dashoffset 0.15s linear;
 }
 
 .big-tap-btn {
@@ -220,7 +212,6 @@ html, body {
   touch-action: none;
   position: relative; z-index: 1;
 }
-.big-tap-btn.breathing { animation: breathScale 4s ease-in-out infinite; }
 .big-tap-btn.complete { box-shadow: 0 0 0 3px rgba(206,173,110,0.5), 0 28px 64px rgba(0,0,0,0.5); }
 #bigTapBtn {
   touch-action: none;
@@ -516,9 +507,9 @@ html, body {
           <span class="gesture-cue cue-swipe-right" id="gestureCue">→</span>
         </div>
         <button class="session-exit-btn" id="sessionExitBtn" type="button" aria-label="Exit session">×</button>
-        <div class="wave-wrap">
-          <svg class="breath-arc" id="breathArc" viewBox="0 0 240 240" aria-hidden="true">
-            <circle id="arcCircle" cx="120" cy="120" r="110" stroke-dasharray="691.15" stroke-dashoffset="691.15" transform="rotate(-90 120 120)"/>
+        <div class="tap-section-wrap">
+          <svg id="arcSvg" style="position:absolute; top:-12px; left:-12px; right:-12px; bottom:-12px; width:calc(100% + 24px); height:calc(100% + 24px); pointer-events:none; z-index:10;" viewBox="0 0 224 224" aria-hidden="true">
+            <circle id="arcCircle" cx="112" cy="112" r="108" fill="none" stroke="#CEAD6E" stroke-width="3" stroke-linecap="round" transform="rotate(-90 112 112)"/>
           </svg>
           <div class="big-tap-btn" id="bigTapBtn">
             <div class="ripple" id="ar1"></div>
@@ -971,7 +962,7 @@ window.addEventListener('online', syncQueue);
 // ── WAVE SESSION ENGINE ──
 const SESSION_MS = 90000;
 const PREVIEW_MS = 2000;
-const ARC_LENGTH = 691.15;
+const ARC_CIRCUMFERENCE = 2 * Math.PI * 108;
 const ALL_GESTURES = ['tap', 'double-tap', 'long-press', 'swipe-left', 'swipe-right', 'swipe-up', 'swipe-down', 'pinch', 'spread', 'shake'];
 const TAP_ONLY_GESTURES = ['tap', 'double-tap', 'long-press'];
 
@@ -1178,11 +1169,23 @@ function fadeInstruction() {
 
 function updateArcProgress() {
   const progress = Math.min(wave.elapsed / SESSION_MS, 1);
-  document.getElementById('arcCircle').style.strokeDashoffset = ARC_LENGTH * (1 - progress);
+  document.getElementById('arcCircle').style.strokeDashoffset = ARC_CIRCUMFERENCE * (1 - progress);
 }
 
 function resetArc() {
-  document.getElementById('arcCircle').style.strokeDashoffset = ARC_LENGTH;
+  const circle = document.getElementById('arcCircle');
+  circle.style.strokeDasharray = ARC_CIRCUMFERENCE;
+  circle.style.strokeDashoffset = ARC_CIRCUMFERENCE;
+}
+
+function updateBreathing() {
+  const sine = Math.sin((wave.elapsed / 4000) * Math.PI * 2);
+  const opacity = 0.4 + 0.6 * ((sine + 1) / 2);
+  const scale = 1 + 0.03 * ((sine + 1) / 2);
+  const arcSvg = document.getElementById('arcSvg');
+  if (arcSvg) arcSvg.style.opacity = opacity;
+  const btn = document.getElementById('bigTapBtn');
+  if (btn) btn.style.transform = 'scale(' + scale + ')';
 }
 
 function resetTapSequence() {
@@ -1226,6 +1229,9 @@ function resetWaveIdle() {
   wave.pausedElapsed = 0;
   wave.startTime = 0;
   document.getElementById('bigTapBtn').classList.remove('breathing', 'complete');
+  document.getElementById('bigTapBtn').style.transform = '';
+  const arcSvg = document.getElementById('arcSvg');
+  if (arcSvg) arcSvg.style.opacity = '';
   document.getElementById('sessionExitBtn').classList.remove('visible');
   document.getElementById('btnLabel').textContent = 'Ride the craving wave';
   resetTapSequence();
@@ -1238,6 +1244,7 @@ function tickWave() {
   const now = performance.now();
   wave.elapsed = now - wave.sessionStart;
   updateArcProgress();
+  updateBreathing();
   if (wave.elapsed >= SESSION_MS) {
     completeWaveSession();
     return;
@@ -1247,10 +1254,19 @@ function tickWave() {
 
 function scheduleGestureCycle() {
   if (wave.status !== 'active') return;
+
+  const instr = document.getElementById('gestureInstruction');
+  instr.style.opacity = '1';
+  instr.style.color = '';
+  instr.style.transform = '';
+  instr.classList.remove('fading');
+
   wave.phase = 'preview';
   wave.gesturePhaseStart = performance.now();
-  const expected = wave.sequence[wave.gestureIndex];
+  const expected = wave.sequence[wave.gestureIndex % wave.sequence.length];
   if (expected) showGestureInstruction(expected);
+
+  const gestureSpeed = getGestureWindowMs();
 
   const previewTimer = setTimeout(() => {
     if (wave.status !== 'active') return;
@@ -1263,11 +1279,12 @@ function scheduleGestureCycle() {
     if (wave.status !== 'active') return;
     fadeInstruction();
     wave.gestureIndex++;
-    if (wave.gestureIndex < wave.sequence.length && wave.elapsed < SESSION_MS) {
-      const nextTimer = setTimeout(scheduleGestureCycle, 0);
-      wave.timers.push(nextTimer);
+    if (wave.gestureIndex >= wave.sequence.length) wave.gestureIndex = 0;
+    if (wave.status === 'active' && wave.elapsed < SESSION_MS) {
+      const t = setTimeout(scheduleGestureCycle, gestureSpeed);
+      wave.timers.push(t);
     }
-  }, getGestureSlotMs());
+  }, PREVIEW_MS + gestureSpeed);
   wave.timers.push(slotTimer);
 }
 
@@ -1278,7 +1295,7 @@ function onGestureMatched(gesture) {
     return;
   }
   if (wave.status !== 'active' || wave.phase !== 'window') return;
-  const expected = wave.sequence[wave.gestureIndex];
+  const expected = wave.sequence[wave.gestureIndex % wave.sequence.length];
   if (gesture !== expected) return;
 
   const responseTime = (Date.now() - wave.gestureWindowStart) / 1000;
@@ -1287,6 +1304,7 @@ function onGestureMatched(gesture) {
   advanceTapSequence();
   clearWaveTimers();
   wave.gestureIndex++;
+  if (wave.gestureIndex >= wave.sequence.length) wave.gestureIndex = 0;
   if (wave.elapsed < SESSION_MS) {
     const t = setTimeout(scheduleGestureCycle, 0);
     wave.timers.push(t);
